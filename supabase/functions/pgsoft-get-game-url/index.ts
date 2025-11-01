@@ -85,13 +85,47 @@ serve(async (req) => {
 
     const gameData = await launchResponse.json();
 
+    // Log full response for debugging in edge logs (safe, server-side only)
+    console.log('VPS launch response payload:', JSON.stringify(gameData));
+
+    // Try to resolve the game URL from multiple possible keys / nesting
+    const nested = (obj: any, ...keys: string[]): string | undefined => {
+      try {
+        return keys.reduce((acc: any, key: string) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+      } catch (_) {
+        return undefined;
+      }
+    };
+
+    const resolvedGameUrl =
+      gameData?.url ||
+      gameData?.gameUrl ||
+      gameData?.link ||
+      gameData?.launch_url ||
+      gameData?.game_link ||
+      nested(gameData, 'data', 'url') ||
+      nested(gameData, 'data', 'link') ||
+      nested(gameData, 'data', 'gameUrl') ||
+      nested(gameData, 'result', 'url') ||
+      nested(gameData, 'response', 'url');
+
+    if (!resolvedGameUrl) {
+      console.error('No game URL found in VPS response');
+      return new Response(
+        JSON.stringify({
+          error: 'A API retornou sucesso mas sem URL do jogo. Verifique a configuração do VPS.',
+        }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Game launched successfully');
 
     return new Response(
       JSON.stringify({
         success: true,
-        gameUrl: gameData.url || gameData.gameUrl,
-        token: gameData.token,
+        gameUrl: resolvedGameUrl,
+        token: gameData?.token,
       }),
       {
         status: 200,
