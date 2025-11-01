@@ -148,7 +148,19 @@ serve(async (req) => {
     // at the VPS in the /public folder, so we need to rewrite the URL to point to the VPS
     if (resolvedGameUrl.includes('m.pgsoft.com')) {
       const vpsBaseUrl = apiSettings.api_key.replace(/\/$/, ''); // Remove trailing slash
-      resolvedGameUrl = resolvedGameUrl.replace('https://m.pgsoft.com', vpsBaseUrl);
+      try {
+        const u = new URL(resolvedGameUrl);
+        const vps = new URL(vpsBaseUrl);
+        u.protocol = vps.protocol; // enforce https if your VPS uses https
+        u.host = vps.host;         // point to VPS domain/IP
+        // Optional: align query helpers to your VPS host
+        u.searchParams.set('api', vps.host);
+        u.searchParams.set('or', vps.host);
+        resolvedGameUrl = u.toString();
+      } catch (_) {
+        // Fallback to simple replace if URL parsing fails
+        resolvedGameUrl = resolvedGameUrl.replace('https://m.pgsoft.com', vpsBaseUrl);
+      }
       console.log('🔧 Fixed game URL to point to VPS:', resolvedGameUrl);
     }
 
