@@ -60,20 +60,14 @@ serve(async (req) => {
       apiUrl: apiSettings.api_key
     });
 
-    // Prepare form-encoded payload (some VPS setups expect x-www-form-urlencoded)
+    // Prepare form-encoded payload
     const params = new URLSearchParams();
     params.append('agentToken', apiSettings.operator_token);
     params.append('agentCode', apiSettings.provider_code || 'VORTEX001');
     params.append('user_code', userId);
     params.append('userId', userId);
     params.append('username', profile.full_name || profile.email);
-    const intBalance = String(Math.floor(Number(profile.balance)));
-    // Send several synonyms for balance to maximize compatibility
-    params.append('saldo', intBalance);
-    params.append('balance', intBalance);
-    params.append('user_balance', intBalance);
-    params.append('userBalance', intBalance);
-    params.append('User Balance', intBalance);
+    params.append('user_balance', String(Math.floor(Number(profile.balance))));
     params.append('gameCode', gameCode);
 
     // Call VPS API to launch game
