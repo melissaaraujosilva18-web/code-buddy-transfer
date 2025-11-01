@@ -92,9 +92,9 @@ serve(async (req) => {
     // Log full response for debugging in edge logs (safe, server-side only)
     console.log('VPS launch response payload:', JSON.stringify(gameData));
 
-    // If VPS reports an error, bubble it up clearly to the client
-    if (gameData?.status === 'error' || gameData?.success === false) {
-      const message = gameData?.message || gameData?.error || 'Erro desconhecido na API do VPS';
+    // Check for errors (status:"error" or status !== 1)
+    if (gameData?.status === 'error' || (typeof gameData?.status === 'number' && gameData?.status !== 1)) {
+      const message = gameData?.message || gameData?.msg || gameData?.error || 'Erro desconhecido na API do VPS';
       return new Response(
         JSON.stringify({ error: `VPS: ${message}` }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -111,10 +111,10 @@ serve(async (req) => {
     };
 
     const resolvedGameUrl =
+      gameData?.launch_url ||
       gameData?.url ||
       gameData?.gameUrl ||
       gameData?.link ||
-      gameData?.launch_url ||
       gameData?.game_link ||
       nested(gameData, 'data', 'url') ||
       nested(gameData, 'data', 'link') ||
