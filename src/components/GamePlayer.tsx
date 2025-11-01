@@ -14,12 +14,22 @@ export default function GamePlayer({ gameUrl, gameName }: GamePlayerProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!gameUrl) return;
+    try {
+      const u = new URL(gameUrl);
+      if (u.hostname.includes('pgsoft.com')) {
+        // Many providers block iframe via X-Frame-Options; open directly to ensure it loads
+        window.location.href = gameUrl;
+        return;
+      }
+    } catch (_) {}
+
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [gameUrl]);
 
   return (
     <div className="fixed inset-0 bg-black">
