@@ -76,6 +76,7 @@ serve(async (req) => {
         balance: Math.floor(Number(profile.balance)),
         user_balance: Math.floor(Number(profile.balance)),
         userBalance: Math.floor(Number(profile.balance)),
+        ['User Balance']: Math.floor(Number(profile.balance)),
         gameCode: gameCode,
       }),
     });
