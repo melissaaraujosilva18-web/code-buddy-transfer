@@ -11,6 +11,11 @@ import GamePlay from "./pages/GamePlay";
 import Transactions from "./pages/Transactions";
 import Referral from "./pages/Referral";
 import Admin from "./pages/Admin";
+import AdminUsers from "./pages/AdminUsers";
+import AdminBets from "./pages/AdminBets";
+import AdminTransactions from "./pages/AdminTransactions";
+import AdminSettings from "./pages/AdminSettings";
+import AllGames from "./pages/AllGames";
 import { AuthProvider } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
@@ -30,6 +35,11 @@ const App = () => (
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/referral" element={<Referral />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/bets" element={<AdminBets />} />
+            <Route path="/admin/transactions" element={<AdminTransactions />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/all-games" element={<AllGames />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
