@@ -14,16 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      game_bets: {
+        Row: {
+          bet_amount: number
+          created_at: string
+          finished_at: string | null
+          game_code: string
+          game_name: string
+          game_session_url: string | null
+          id: string
+          multiplier: number | null
+          started_at: string
+          status: string
+          user_id: string
+          win_amount: number | null
+        }
+        Insert: {
+          bet_amount: number
+          created_at?: string
+          finished_at?: string | null
+          game_code: string
+          game_name: string
+          game_session_url?: string | null
+          id?: string
+          multiplier?: number | null
+          started_at?: string
+          status?: string
+          user_id: string
+          win_amount?: number | null
+        }
+        Update: {
+          bet_amount?: number
+          created_at?: string
+          finished_at?: string | null
+          game_code?: string
+          game_name?: string
+          game_session_url?: string | null
+          id?: string
+          multiplier?: number | null
+          started_at?: string
+          status?: string
+          user_id?: string
+          win_amount?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          balance: number
+          blocked: boolean
+          bonus_claimed: boolean
+          created_at: string
+          email: string
+          full_name: string | null
+          has_deposited: boolean
+          id: string
+          pix_key: string | null
+          pix_key_type: string | null
+          pix_name: string | null
+          updated_at: string
+          withdrawal_amount: number
+          withdrawal_status: string | null
+        }
+        Insert: {
+          balance?: number
+          blocked?: boolean
+          bonus_claimed?: boolean
+          created_at?: string
+          email: string
+          full_name?: string | null
+          has_deposited?: boolean
+          id: string
+          pix_key?: string | null
+          pix_key_type?: string | null
+          pix_name?: string | null
+          updated_at?: string
+          withdrawal_amount?: number
+          withdrawal_status?: string | null
+        }
+        Update: {
+          balance?: number
+          blocked?: boolean
+          bonus_claimed?: boolean
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          has_deposited?: boolean
+          id?: string
+          pix_key?: string | null
+          pix_key_type?: string | null
+          pix_name?: string | null
+          updated_at?: string
+          withdrawal_amount?: number
+          withdrawal_status?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          balance_before: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          balance_before?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      process_game_bet: {
+        Args: {
+          p_bet_amount: number
+          p_game_code: string
+          p_game_name: string
+          p_game_url: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      process_game_win: {
+        Args: { p_bet_id: string; p_multiplier: number; p_win_amount: number }
+        Returns: Json
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +325,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
