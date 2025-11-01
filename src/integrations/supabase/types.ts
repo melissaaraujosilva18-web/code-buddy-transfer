@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_api_settings: {
+        Row: {
+          api_key: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          operator_token: string | null
+          provider_code: string | null
+          rtp: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          operator_token?: string | null
+          provider_code?: string | null
+          rtp?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          operator_token?: string | null
+          provider_code?: string | null
+          rtp?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       game_bets: {
         Row: {
           bet_amount: number

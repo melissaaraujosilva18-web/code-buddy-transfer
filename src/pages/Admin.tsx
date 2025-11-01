@@ -1,8 +1,8 @@
 import { AdminRoute } from "@/components/AdminRoute";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users, DollarSign, TrendingDown, Wallet, Trophy, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,17 +12,17 @@ function AdminContent() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles } = await supabase
         .from("profiles")
         .select("id, balance, has_deposited");
 
-      if (profilesError) throw profilesError;
-
-      const { data: transactions, error: transactionsError } = await supabase
+      const { data: transactions } = await supabase
         .from("transactions")
         .select("type, amount");
 
-      if (transactionsError) throw transactionsError;
+      const { data: bets } = await supabase
+        .from("game_bets")
+        .select("bet_amount, win_amount, status");
 
       const totalUsers = profiles?.length || 0;
       const totalDeposits = transactions
@@ -32,42 +32,51 @@ function AdminContent() {
         ?.filter((t) => t.type === "withdrawal")
         .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) || 0;
       const totalBalance = profiles?.reduce((sum, p) => sum + Number(p.balance), 0) || 0;
+      const totalBets = bets?.reduce((sum, b) => sum + Number(b.bet_amount), 0) || 0;
+      const totalPaid = bets?.reduce((sum, b) => sum + Number(b.win_amount || 0), 0) || 0;
 
       return {
         totalUsers,
         totalDeposits,
         totalWithdrawals,
         totalBalance,
+        totalBets,
+        totalPaid,
+        profit: totalBets - totalPaid,
       };
     },
   });
 
-  const { data: pendingWithdrawals } = useQuery({
-    queryKey: ["pending-withdrawals"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, email, full_name, withdrawal_amount, withdrawal_status, pix_key")
-        .eq("withdrawal_status", "pending")
-        .gt("withdrawal_amount", 0);
-
-      if (error) throw error;
-      return data;
+  const adminSections = [
+    {
+      title: "Gerenciar Usuários",
+      description: "Ver, editar, bloquear usuários e gerenciar saldos",
+      icon: Users,
+      path: "/admin/users",
+      color: "text-blue-500",
     },
-  });
-
-  const handleApproveWithdrawal = async (userId: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        withdrawal_status: "approved",
-      })
-      .eq("id", userId);
-
-    if (error) {
-      console.error("Error approving withdrawal:", error);
-    }
-  };
+    {
+      title: "Gerenciar Apostas",
+      description: "Ver todas as apostas, filtrar por status e buscar",
+      icon: Trophy,
+      path: "/admin/bets",
+      color: "text-purple-500",
+    },
+    {
+      title: "Transações",
+      description: "Histórico completo de depósitos e saques",
+      icon: DollarSign,
+      path: "/admin/transactions",
+      color: "text-green-500",
+    },
+    {
+      title: "Configurações da API",
+      description: "Configurar credenciais e RTP dos jogos",
+      icon: Settings,
+      path: "/admin/settings",
+      color: "text-orange-500",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,17 +85,24 @@ function AdminContent() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-2xl font-bold">Painel Administrativo</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Painel Administrativo</h1>
+            <p className="text-sm text-muted-foreground">Controle total da plataforma</p>
+          </div>
         </div>
 
         {isLoading ? (
           <div className="text-center py-12">Carregando...</div>
         ) : (
           <div className="space-y-6">
+            {/* Estatísticas */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Total de Usuários</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Total de Usuários
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold">{stats?.totalUsers}</p>
@@ -94,8 +110,11 @@ function AdminContent() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Total Depositado</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Total Depositado
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-green-500">
@@ -105,8 +124,11 @@ function AdminContent() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Total Sacado</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4" />
+                    Total Sacado
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-red-500">
@@ -116,8 +138,11 @@ function AdminContent() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Saldo Total</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    Saldo Total
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-primary">
@@ -125,46 +150,68 @@ function AdminContent() {
                   </p>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Total Apostado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-blue-500">
+                    R$ {stats?.totalBets.toFixed(2)}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4" />
+                    Total Pago
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-orange-500">
+                    R$ {stats?.totalPaid.toFixed(2)}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Lucro Líquido
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className={`text-3xl font-bold ${(stats?.profit || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    R$ {stats?.profit.toFixed(2)}
+                  </p>
+                </CardContent>
+              </Card>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Saques Pendentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {pendingWithdrawals && pendingWithdrawals.length > 0 ? (
-                  <div className="space-y-4">
-                    {pendingWithdrawals.map((withdrawal) => (
-                      <div
-                        key={withdrawal.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div>
-                          <p className="font-semibold">{withdrawal.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{withdrawal.email}</p>
-                          <p className="text-sm text-muted-foreground">PIX: {withdrawal.pix_key}</p>
-                        </div>
-                        <div className="text-right space-y-2">
-                          <p className="text-xl font-bold">
-                            R$ {Number(withdrawal.withdrawal_amount).toFixed(2)}
-                          </p>
-                          <Button
-                            onClick={() => handleApproveWithdrawal(withdrawal.id)}
-                            size="sm"
-                          >
-                            Aprovar
-                          </Button>
-                        </div>
+            {/* Seções de Admin */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adminSections.map((section) => (
+                <Card key={section.path} className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate(section.path)}>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-lg bg-muted flex items-center justify-center ${section.color}`}>
+                        <section.icon className="h-6 w-6" />
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhum saque pendente
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                      <div>
+                        <CardTitle className="text-base">{section.title}</CardTitle>
+                        <CardDescription className="text-xs">{section.description}</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

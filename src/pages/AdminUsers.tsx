@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, User, DollarSign } from "lucide-react";
+import { ArrowLeft, Search, User, DollarSign, Mail, Lock, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface Profile {
   id: string;
@@ -21,6 +24,10 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [balanceAmount, setBalanceAmount] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -56,24 +63,71 @@ export default function AdminUsers() {
     }
   };
 
-  const handleAddBalance = async (userId: string) => {
-    const amount = prompt("Digite o valor a adicionar:");
-    if (!amount || isNaN(Number(amount))) return;
+  const handleUpdateEmail = async () => {
+    if (!editingUser || !newEmail) return;
 
-    const user = users.find(u => u.id === userId);
-    if (!user) return;
+    try {
+      const { error } = await supabase.functions.invoke('admin-update-user', {
+        body: {
+          userId: editingUser.id,
+          email: newEmail
+        }
+      });
 
-    const newBalance = Number(user.balance) + Number(amount);
+      if (error) throw error;
+
+      toast.success("Email atualizado com sucesso");
+      setEditingUser(null);
+      setNewEmail("");
+      fetchUsers();
+    } catch (error: any) {
+      toast.error("Erro ao atualizar email: " + error.message);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!editingUser || !newPassword) return;
+
+    try {
+      const { error } = await supabase.functions.invoke('admin-update-user', {
+        body: {
+          userId: editingUser.id,
+          password: newPassword
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success("Senha atualizada com sucesso");
+      setEditingUser(null);
+      setNewPassword("");
+    } catch (error: any) {
+      toast.error("Erro ao atualizar senha: " + error.message);
+    }
+  };
+
+  const handleAddBalance = async () => {
+    if (!editingUser || !balanceAmount) return;
+
+    const amount = Number(balanceAmount);
+    if (isNaN(amount)) {
+      toast.error("Digite um valor válido");
+      return;
+    }
+
+    const newBalance = Number(editingUser.balance) + amount;
 
     const { error } = await supabase
       .from("profiles")
       .update({ balance: newBalance })
-      .eq("id", userId);
+      .eq("id", editingUser.id);
 
     if (error) {
       toast.error("Erro ao adicionar saldo");
     } else {
-      toast.success("Saldo adicionado com sucesso");
+      toast.success(`${amount >= 0 ? 'Saldo adicionado' : 'Saldo removido'} com sucesso`);
+      setEditingUser(null);
+      setBalanceAmount("");
       fetchUsers();
     }
   };
@@ -91,7 +145,7 @@ export default function AdminUsers() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold">Gerenciar Usuários</h1>
-          <p className="text-muted-foreground">Ver e gerenciar todos os usuários</p>
+          <p className="text-muted-foreground">Ver e gerenciar todos os usuários do sistema</p>
         </div>
       </div>
 
@@ -118,38 +172,64 @@ export default function AdminUsers() {
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <CardTitle>{user.full_name || "Sem nome"}</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        {user.full_name || "Sem nome"}
+                        {user.blocked ? (
+                          <Badge variant="destructive">Bloqueado</Badge>
+                        ) : (
+                          <Badge variant="default">Ativo</Badge>
+                        )}
+                      </CardTitle>
                       <CardDescription>{user.email}</CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right mr-4">
-                      <p className="text-sm text-muted-foreground">Saldo</p>
-                      <p className="text-lg font-bold">R$ {Number(user.balance).toFixed(2)}</p>
-                    </div>
-                    {user.blocked && (
-                      <span className="px-2 py-1 bg-destructive/20 text-destructive rounded text-xs">
-                        Bloqueado
-                      </span>
-                    )}
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Saldo</p>
+                    <p className="text-lg font-bold">R$ {Number(user.balance).toFixed(2)}</p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleAddBalance(user.id)}
+                    onClick={() => {
+                      setEditingUser(user);
+                      setBalanceAmount("");
+                    }}
                   >
                     <DollarSign className="h-4 w-4 mr-2" />
-                    Adicionar Saldo
+                    Gerenciar Saldo
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingUser(user);
+                      setNewEmail(user.email);
+                    }}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Trocar Email
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingUser(user);
+                      setNewPassword("");
+                    }}
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    Trocar Senha
                   </Button>
                   <Button
                     variant={user.blocked ? "default" : "destructive"}
                     size="sm"
                     onClick={() => handleToggleBlock(user.id, user.blocked)}
                   >
+                    <Shield className="h-4 w-4 mr-2" />
                     {user.blocked ? "Desbloquear" : "Bloquear"}
                   </Button>
                 </div>
@@ -158,6 +238,93 @@ export default function AdminUsers() {
           ))}
         </div>
       )}
+
+      {/* Dialog para gerenciar saldo */}
+      <Dialog open={editingUser !== null && balanceAmount !== undefined} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerenciar Saldo</DialogTitle>
+            <DialogDescription>
+              Adicione ou remova saldo do usuário {editingUser?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Saldo Atual</Label>
+              <p className="text-2xl font-bold">R$ {editingUser?.balance.toFixed(2)}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="balance">Valor (use - para remover)</Label>
+              <Input
+                id="balance"
+                type="number"
+                value={balanceAmount}
+                onChange={(e) => setBalanceAmount(e.target.value)}
+                placeholder="Ex: 100 ou -50"
+              />
+            </div>
+            <Button onClick={handleAddBalance} className="w-full">
+              Atualizar Saldo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para trocar email */}
+      <Dialog open={editingUser !== null && newEmail !== undefined && balanceAmount === undefined} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trocar Email</DialogTitle>
+            <DialogDescription>
+              Alterar o email do usuário {editingUser?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Novo Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="novo@email.com"
+              />
+            </div>
+            <Button onClick={handleUpdateEmail} className="w-full">
+              Atualizar Email
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para trocar senha */}
+      <Dialog open={editingUser !== null && newPassword !== undefined && newEmail === undefined} onOpenChange={(open) => !open && setEditingUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trocar Senha</DialogTitle>
+            <DialogDescription>
+              Definir uma nova senha para {editingUser?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Nova Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Digite a nova senha"
+                minLength={6}
+              />
+              <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres</p>
+            </div>
+            <Button onClick={handleUpdatePassword} className="w-full">
+              Atualizar Senha
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

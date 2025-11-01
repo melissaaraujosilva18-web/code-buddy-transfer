@@ -46,6 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (data) {
+        // Verificar se o usuário está bloqueado
+        if (data.blocked) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          navigate("/auth");
+          throw new Error("Conta bloqueada. Entre em contato com o suporte.");
+        }
+
         setProfile({
           ...data,
           withdrawal_status: data.withdrawal_status as 'processing' | 'awaiting_fee' | null,
@@ -54,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
+      throw error;
     }
   };
 
