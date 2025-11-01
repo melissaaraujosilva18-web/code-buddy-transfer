@@ -69,6 +69,7 @@ serve(async (req) => {
       body: JSON.stringify({
         agentToken: apiSettings.operator_token,
         agentCode: apiSettings.provider_code || 'VORTEX',
+        user_code: userId,
         userId: userId,
         username: profile.full_name || profile.email,
         saldo: parseFloat(profile.balance.toString()),
