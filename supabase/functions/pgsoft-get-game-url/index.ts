@@ -72,7 +72,7 @@ serve(async (req) => {
         user_code: userId,
         userId: userId,
         username: profile.full_name || profile.email,
-        saldo: Number(profile.balance),
+        saldo: Math.floor(Number(profile.balance)),
         gameCode: gameCode,
       }),
     });
