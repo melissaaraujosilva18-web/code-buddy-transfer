@@ -25,6 +25,7 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [editMode, setEditMode] = useState<'balance' | 'email' | 'password' | null>(null);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [balanceAmount, setBalanceAmount] = useState("");
@@ -64,10 +65,13 @@ export default function AdminUsers() {
   };
 
   const handleUpdateEmail = async () => {
-    if (!editingUser || !newEmail) return;
+    if (!editingUser || !newEmail) {
+      toast.error("Digite um email válido");
+      return;
+    }
 
     try {
-      const { error } = await supabase.functions.invoke('admin-update-user', {
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
         body: {
           userId: editingUser.id,
           email: newEmail
@@ -76,20 +80,31 @@ export default function AdminUsers() {
 
       if (error) throw error;
 
+      // Atualizar também na tabela profiles
+      await supabase
+        .from('profiles')
+        .update({ email: newEmail })
+        .eq('id', editingUser.id);
+
       toast.success("Email atualizado com sucesso");
       setEditingUser(null);
+      setEditMode(null);
       setNewEmail("");
       fetchUsers();
     } catch (error: any) {
-      toast.error("Erro ao atualizar email: " + error.message);
+      console.error('Erro ao atualizar email:', error);
+      toast.error("Erro ao atualizar email: " + (error.message || 'Erro desconhecido'));
     }
   };
 
   const handleUpdatePassword = async () => {
-    if (!editingUser || !newPassword) return;
+    if (!editingUser || !newPassword || newPassword.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
 
     try {
-      const { error } = await supabase.functions.invoke('admin-update-user', {
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
         body: {
           userId: editingUser.id,
           password: newPassword
@@ -100,14 +115,19 @@ export default function AdminUsers() {
 
       toast.success("Senha atualizada com sucesso");
       setEditingUser(null);
+      setEditMode(null);
       setNewPassword("");
     } catch (error: any) {
-      toast.error("Erro ao atualizar senha: " + error.message);
+      console.error('Erro ao atualizar senha:', error);
+      toast.error("Erro ao atualizar senha: " + (error.message || 'Erro desconhecido'));
     }
   };
 
   const handleAddBalance = async () => {
-    if (!editingUser || !balanceAmount) return;
+    if (!editingUser || !balanceAmount) {
+      toast.error("Digite um valor");
+      return;
+    }
 
     const amount = Number(balanceAmount);
     if (isNaN(amount)) {
@@ -117,16 +137,23 @@ export default function AdminUsers() {
 
     const newBalance = Number(editingUser.balance) + amount;
 
+    if (newBalance < 0) {
+      toast.error("O saldo não pode ficar negativo");
+      return;
+    }
+
     const { error } = await supabase
       .from("profiles")
       .update({ balance: newBalance })
       .eq("id", editingUser.id);
 
     if (error) {
+      console.error('Erro ao atualizar saldo:', error);
       toast.error("Erro ao adicionar saldo");
     } else {
       toast.success(`${amount >= 0 ? 'Saldo adicionado' : 'Saldo removido'} com sucesso`);
       setEditingUser(null);
+      setEditMode(null);
       setBalanceAmount("");
       fetchUsers();
     }
@@ -196,6 +223,7 @@ export default function AdminUsers() {
                     size="sm"
                     onClick={() => {
                       setEditingUser(user);
+                      setEditMode('balance');
                       setBalanceAmount("");
                     }}
                   >
@@ -207,6 +235,7 @@ export default function AdminUsers() {
                     size="sm"
                     onClick={() => {
                       setEditingUser(user);
+                      setEditMode('email');
                       setNewEmail(user.email);
                     }}
                   >
@@ -218,6 +247,7 @@ export default function AdminUsers() {
                     size="sm"
                     onClick={() => {
                       setEditingUser(user);
+                      setEditMode('password');
                       setNewPassword("");
                     }}
                   >
@@ -240,7 +270,12 @@ export default function AdminUsers() {
       )}
 
       {/* Dialog para gerenciar saldo */}
-      <Dialog open={editingUser !== null && balanceAmount !== undefined} onOpenChange={(open) => !open && setEditingUser(null)}>
+      <Dialog open={editingUser !== null && editMode === 'balance'} onOpenChange={(open) => {
+        if (!open) {
+          setEditingUser(null);
+          setEditMode(null);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Gerenciar Saldo</DialogTitle>
@@ -258,6 +293,7 @@ export default function AdminUsers() {
               <Input
                 id="balance"
                 type="number"
+                step="0.01"
                 value={balanceAmount}
                 onChange={(e) => setBalanceAmount(e.target.value)}
                 placeholder="Ex: 100 ou -50"
@@ -271,7 +307,12 @@ export default function AdminUsers() {
       </Dialog>
 
       {/* Dialog para trocar email */}
-      <Dialog open={editingUser !== null && newEmail !== undefined && balanceAmount === undefined} onOpenChange={(open) => !open && setEditingUser(null)}>
+      <Dialog open={editingUser !== null && editMode === 'email'} onOpenChange={(open) => {
+        if (!open) {
+          setEditingUser(null);
+          setEditMode(null);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Trocar Email</DialogTitle>
@@ -298,7 +339,12 @@ export default function AdminUsers() {
       </Dialog>
 
       {/* Dialog para trocar senha */}
-      <Dialog open={editingUser !== null && newPassword !== undefined && newEmail === undefined} onOpenChange={(open) => !open && setEditingUser(null)}>
+      <Dialog open={editingUser !== null && editMode === 'password'} onOpenChange={(open) => {
+        if (!open) {
+          setEditingUser(null);
+          setEditMode(null);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Trocar Senha</DialogTitle>

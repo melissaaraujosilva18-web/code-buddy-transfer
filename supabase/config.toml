@@ -2,3 +2,12 @@ project_id = "ryuexvaocxzqpfcekejh"
 
 [functions.import-users]
 verify_jwt = false
+
+[functions.pgsoft-webhook]
+verify_jwt = false
+
+[functions.oasyfy-webhook]
+verify_jwt = false
+
+[functions.admin-fee-webhook]
+verify_jwt = false

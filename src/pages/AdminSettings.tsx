@@ -232,6 +232,100 @@ export default function AdminSettings() {
 
         <Card>
           <CardHeader>
+            <CardTitle>URLs dos Webhooks</CardTitle>
+            <CardDescription>
+              Configure estas URLs na plataforma PGSoft para integração automática
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Webhook PGSoft (Apostas e Ganhos)</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value="https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/pgsoft-webhook"
+                  className="font-mono text-xs"
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText("https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/pgsoft-webhook");
+                    toast.success("URL copiada!");
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                URL para receber callbacks de apostas, ganhos e rollbacks
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Webhook Oasyfy (Depósitos PIX)</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value="https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/oasyfy-webhook"
+                  className="font-mono text-xs"
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText("https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/oasyfy-webhook");
+                    toast.success("URL copiada!");
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                URL para confirmação de depósitos via PIX
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Webhook Taxa Administrativa</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value="https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/admin-fee-webhook"
+                  className="font-mono text-xs"
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText("https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/admin-fee-webhook");
+                    toast.success("URL copiada!");
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                URL para confirmação de pagamento da taxa de saque (10%)
+              </p>
+            </div>
+
+            <Alert>
+              <AlertDescription>
+                <strong>Como configurar na Oasyfy:</strong>
+                <ol className="list-decimal list-inside mt-2 space-y-1">
+                  <li>Acesse o painel da Oasyfy</li>
+                  <li>Vá em Configurações → Webhooks</li>
+                  <li>Cole as URLs acima nos campos correspondentes</li>
+                  <li>Salve as configurações</li>
+                </ol>
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Instruções SQL Detalhadas</span>
               <Button
