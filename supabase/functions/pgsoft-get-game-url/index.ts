@@ -62,16 +62,27 @@ serve(async (req) => {
 
     // Prepare form-encoded payload
     const params = new URLSearchParams();
+    // Prefer expected param names; keep legacy keys for compatibility
+    params.append('operator_token', apiSettings.operator_token);
+    params.append('secret_key', apiSettings.secret_key);
+    params.append('provider_code', apiSettings.provider_code || 'VORTEX001');
+    // Legacy aliases (if VPS expects these)
     params.append('agentToken', apiSettings.operator_token);
     params.append('secretKey', apiSettings.secret_key);
     params.append('agentCode', apiSettings.provider_code || 'VORTEX001');
-    params.append('provider_code', apiSettings.provider_code || 'VORTEX001');
+
+    // User identifiers (send both common variants)
+    params.append('user_id', userId);
     params.append('user_code', userId);
     params.append('userId', userId);
-    params.append('username', profile.full_name || profile.email);
-    params.append('user_balance', String(Math.floor(Number(profile.balance))));
-    params.append('game_code', gameCode);
 
+    params.append('username', profile.full_name || profile.email);
+    // Balance (send both common variants as integer)
+    const intBalance = String(Math.floor(Number(profile.balance)));
+    params.append('balance', intBalance);
+    params.append('user_balance', intBalance);
+
+    params.append('game_code', gameCode);
     // Call VPS API to launch game
     const launchResponse = await fetch(`${apiSettings.api_key}/api/v1/game_launch`, {
       method: 'POST',
