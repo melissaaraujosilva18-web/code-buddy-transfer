@@ -36,14 +36,23 @@ export default function GamePlayer({ gameUrl, gameName }: GamePlayerProps) {
         </div>
       )}
 
-      {/* Back Button */}
-      <div className="fixed top-4 left-4 z-40">
+      {/* Back & Open in New Tab Buttons */}
+      <div className="fixed top-4 left-4 z-40 flex gap-2">
         <Button
           onClick={() => navigate(-1)}
           size="icon"
           className="bg-primary hover:bg-primary/90 rounded-full"
+          aria-label="Voltar"
         >
           <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <Button
+          onClick={() => window.open(gameUrl, '_blank', 'noopener,noreferrer')}
+          className="rounded-full"
+          aria-label={`Abrir ${gameName} em nova aba`}
+          variant="secondary"
+        >
+          Abrir em nova aba
         </Button>
       </div>
 
