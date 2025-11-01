@@ -1,9 +1,29 @@
 # 🎮 Guia Completo - Instalação da API no VPS
 
+## ⚠️ IMPORTANTE - Leia Antes de Instalar
+
+Esta API é um **CLONE/DEMO** dos jogos PGSoft. Os jogos funcionam de forma limitada:
+
+### ✅ O que FUNCIONA:
+- API gera URLs de jogos válidas
+- Jogos abrem em nova aba
+- Visual dos jogos é idêntico ao original
+
+### ❌ O que NÃO FUNCIONA:
+- **Jogos não carregam em iframe** (tela preta) - bloqueado por X-Frame-Options
+- Apostas reais não funcionam corretamente
+- Callbacks podem não retornar saldo/ganhos
+- Não é a API oficial da PGSoft
+
+### 🎯 Solução Atual no Vortexbet:
+O sistema já está configurado com **fallback automático** - quando detecta que o iframe está bloqueado, oferece botão para abrir em nova aba.
+
+---
+
 ## 📋 Pré-requisitos
 - VPS Ubuntu 22.04 (Hostinger ou outro provedor)
 - Acesso SSH ao servidor
-- Domínio ou IP público
+- **IP público** (domínio é opcional, pode usar só o IP)
 
 ## 🚀 Passo a Passo
 
@@ -206,18 +226,28 @@ http://seu-ip:3000/status
 
 ## 🎯 Configurar no Painel Admin Vortexbet
 
+### **IMPORTANTE**: Use o IP da sua VPS, NÃO precisa de domínio!
+
 1. Acesse `/admin` → Settings
 2. Configure:
-   - **URL da API**: `http://seu-ip:3000` ou `https://seu-dominio.com`
-   - **Agent Token**: o mesmo que colocou no MySQL
-   - **Agent Code**: VORTEX (ou o que você definiu)
+   - **URL da API**: `http://SEU-IP-VPS:3000` (exemplo: `http://31.97.84.170:3000`)
+   - **Agent Token**: o mesmo que colocou no MySQL (da linha 98 do script SQL)
+   - **Agent Code**: VORTEX (ou o que você definiu na linha 94)
+   - **Secret Key**: o mesmo que colocou no MySQL (da linha 99)
 3. Salve
+
+**Nota**: Se quiser usar domínio (opcional), configure Nginx + SSL conforme passo 17
 
 ## 🎮 Testar Jogos
 
 1. Acesse a plataforma Vortexbet
 2. Clique em qualquer jogo
-3. O jogo deve carregar!
+3. **Comportamento esperado**:
+   - ✅ Loading aparece
+   - ✅ URL do jogo é gerada (veja nos logs: `pm2 logs api-jogos`)
+   - ❌ Tela preta no iframe (X-Frame-Options bloqueia)
+   - ✅ Mensagem de fallback aparece: "Abrir em nova aba"
+4. Clique em "Abrir em nova aba" - o jogo abre e funciona visualmente
 
 ## 📊 Monitoramento
 
@@ -268,14 +298,34 @@ netstat -tulpn | grep 3000
 Sua API está rodando e integrada com a plataforma Vortexbet!
 
 **URLs importantes:**
-- API: `http://seu-ip:3000`
-- Status: `http://seu-ip:3000/status`
+- API: `http://SEU-IP-VPS:3000`
+- Status: `http://SEU-IP-VPS:3000/status`
 - Callback: configurado automaticamente no MySQL
 
 **Credenciais para lembrar:**
-- Agent Token (colocou no MySQL)
-- Agent Code (VORTEX)
-- URL da API (coloca no painel admin)
+- Agent Token (colocou no MySQL linha 98)
+- Agent Code (VORTEX - linha 94)
+- Secret Key (linha 99)
+- URL da API: `http://SEU-IP-VPS:3000` (coloca no painel admin)
+
+---
+
+## 🔴 Limitações Conhecidas (API Clone/Demo)
+
+### Problema: Tela Preta no Iframe
+**Causa**: URLs retornadas têm `X-Frame-Options: SAMEORIGIN` que bloqueiam iframe  
+**Solução**: O sistema já tem fallback automático - abre em nova aba
+
+### Por que isso acontece?
+Esta é uma API clone/demo que:
+- Gera tokens válidos da PGSoft
+- Mas aponta para servidores demo que bloqueiam iframe
+- Não é a integração oficial da PGSoft
+
+### O que você pode fazer:
+1. **Aceitar limitação**: Jogos funcionam em nova aba (atual)
+2. **Migrar para API oficial**: Requer contrato com PGSoft + domínio whitelistado
+3. **Criar jogos próprios**: Desenvolver slots/crash games proprietários
 
 ---
 
