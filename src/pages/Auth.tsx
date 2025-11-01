@@ -308,18 +308,16 @@ const Auth = () => {
               </TabsContent>
             </Tabs>
 
-            {isAdmin && (
-              <div className="mt-4 pt-4 border-t border-gray-700">
-                <Button
-                  onClick={handleImportUsers}
-                  variant="outline"
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-white border-gray-600"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Importando..." : "Importar Usuários do CSV"}
-                </Button>
-              </div>
-            )}
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <Button
+                onClick={handleImportUsers}
+                variant="outline"
+                className="w-full bg-gray-800 hover:bg-gray-700 text-white border-gray-600"
+                disabled={isLoading}
+              >
+                {isLoading ? "Importando..." : "Importar Usuários do CSV"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
