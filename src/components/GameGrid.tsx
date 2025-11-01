@@ -23,19 +23,16 @@ interface Game {
 }
 
 const pgSoftGames: Game[] = [
-  { id: 1, title: "Fortune Tiger", image: fortuneTiger, provider: "PG Soft", gameCode: "126", hot: true },
-  { id: 2, title: "Fortune Ox", image: fortuneOx, provider: "PG Soft", gameCode: "98", hot: true },
-  { id: 3, title: "Fortune Mouse", image: fortuneMouse, provider: "PG Soft", gameCode: "68", hot: true },
-  { id: 4, title: "Fortune Dragon", image: fortuneMouse, provider: "PG Soft", gameCode: "1695365", hot: true },
-  { id: 5, title: "Fortune Rabbit", image: fortuneRabbit, provider: "PG Soft", gameCode: "1543462", hot: true },
-  { id: 6, title: "Bikini Paradise", image: bikiniParadise, provider: "PG Soft", gameCode: "69" },
-  { id: 7, title: "Double Fortune", image: doubleFortune, provider: "PG Soft", gameCode: "48", hot: true },
-  { id: 8, title: "Ganesha Gold", image: ganeshaGold, provider: "PG Soft", gameCode: "42", hot: true },
-  { id: 9, title: "Dragon Tiger Luck", image: dragonTiger, provider: "PG Soft", gameCode: "63", hot: true },
-  { id: 10, title: "Jungle Delight", image: jungleDelight, provider: "PG Soft", gameCode: "40" },
-  { id: 11, title: "Cash Mania", image: cashMania, provider: "PG Soft", gameCode: "1682240", hot: true },
-  { id: 12, title: "Dragon Hatch 2", image: dragonTiger, provider: "PG Soft", gameCode: "1451122", hot: true },
-  { id: 13, title: "Wild Ape", image: ganeshaGold, provider: "PG Soft", gameCode: "1508783", hot: true },
+  { id: 1, title: "Fortune Tiger", image: fortuneTiger, provider: "PG Soft", gameCode: "fortune-tiger", hot: true },
+  { id: 2, title: "Fortune Ox", image: fortuneOx, provider: "PG Soft", gameCode: "fortune-ox", hot: true },
+  { id: 3, title: "Fortune Mouse", image: fortuneMouse, provider: "PG Soft", gameCode: "fortune-mouse", hot: true },
+  { id: 4, title: "Fortune Dragon", image: fortuneMouse, provider: "PG Soft", gameCode: "fortune-dragon", hot: true },
+  { id: 5, title: "Fortune Rabbit", image: fortuneRabbit, provider: "PG Soft", gameCode: "fortune-rabbit", hot: true },
+  { id: 6, title: "Bikini Paradise", image: bikiniParadise, provider: "PG Soft", gameCode: "bikini-paradise" },
+  { id: 7, title: "Double Fortune", image: doubleFortune, provider: "PG Soft", gameCode: "double-fortune", hot: true },
+  { id: 8, title: "Ganesha Gold", image: ganeshaGold, provider: "PG Soft", gameCode: "ganesha-gold", hot: true },
+  { id: 9, title: "Dragon Tiger Luck", image: dragonTiger, provider: "PG Soft", gameCode: "dragon-tiger-luck", hot: true },
+  { id: 10, title: "Jungle Delight", image: jungleDelight, provider: "PG Soft", gameCode: "jungle-delight" },
 ];
 
 export function GameGrid() {
