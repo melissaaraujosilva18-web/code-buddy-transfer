@@ -166,10 +166,16 @@ serve(async (req) => {
 
     console.log('Game launched successfully, final URL:', resolvedGameUrl);
 
+    // Wrap the game URL through our proxy to bypass mixed content and CSP restrictions
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const proxiedGameUrl = `${supabaseUrl}/functions/v1/game-proxy?url=${encodeURIComponent(resolvedGameUrl)}`;
+    
+    console.log('Proxied URL:', proxiedGameUrl);
+
     return new Response(
       JSON.stringify({
         success: true,
-        gameUrl: resolvedGameUrl,
+        gameUrl: proxiedGameUrl,
         token: gameData?.token,
       }),
       {
