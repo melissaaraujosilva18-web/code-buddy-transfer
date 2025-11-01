@@ -4,7 +4,7 @@ import { WithdrawalNotifications } from "@/components/WithdrawalNotifications";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { GameGrid } from "@/components/GameGrid";
 import { Button } from "@/components/ui/button";
-import { User, LogOut, Globe, CreditCard, HandCoins, CheckCircle, History } from "lucide-react";
+import { User, LogOut, Globe, CreditCard, HandCoins, CheckCircle, History, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 const Index = () => {
   const { isAdmin } = useIsAdmin();
@@ -96,12 +98,17 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
-        <div className="container mx-auto py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={vortexbetLogo} alt="Vortexbet" className="h-16 sm:h-20 md:h-24" />
-          </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar />
+        
+        <div className="flex-1 flex flex-col">
+          <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
+            <div className="container mx-auto py-3 sm:py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="hidden md:flex" />
+                <img src={vortexbetLogo} alt="Vortexbet" className="h-16 sm:h-20 md:h-24" />
+              </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {user && profile ? (
@@ -265,72 +272,74 @@ const Index = () => {
         </div>
       </header>
 
-      {showBonusBanner && (
-        <WelcomeBonusBanner
-          onClose={() => setShowBonusBanner(false)}
-          onRescue={handleRescueBonus}
-        />
-      )}
+          <main className="container mx-auto py-2 sm:py-6 space-y-2 sm:space-y-6 md:space-y-8 pb-20">
+            {showBonusBanner && (
+              <WelcomeBonusBanner
+                onClose={() => setShowBonusBanner(false)}
+                onRescue={handleRescueBonus}
+              />
+            )}
 
-      <main className="container mx-auto py-2 sm:py-6 space-y-2 sm:space-y-6 md:space-y-8 pb-20">
-        <section>
-          <PromoCarousel />
-        </section>
+            <section>
+              <PromoCarousel />
+            </section>
 
-        <section>
-          <WithdrawalNotifications />
-        </section>
+            <section>
+              <WithdrawalNotifications />
+            </section>
 
-        <section>
-          <CategoryTabs />
-        </section>
+            <section>
+              <CategoryTabs />
+            </section>
 
-        <section>
-          <GameGrid />
-        </section>
-      </main>
+            <section>
+              <GameGrid />
+            </section>
+          </main>
 
-      <Footer />
+          <Footer />
 
-      <LanguageModal
-        isOpen={showLanguageModal}
-        onClose={() => setShowLanguageModal(false)}
-        onSelectLanguage={handleLanguageSelect}
-      />
+          <LanguageModal
+            isOpen={showLanguageModal}
+            onClose={() => setShowLanguageModal(false)}
+            onSelectLanguage={handleLanguageSelect}
+          />
 
-      <DepositModal
-        isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
-      />
+          <DepositModal
+            isOpen={showDepositModal}
+            onClose={() => setShowDepositModal(false)}
+          />
 
-      <WithdrawalModal
-        isOpen={showWithdrawalModal}
-        onClose={() => setShowWithdrawalModal(false)}
-      />
+          <WithdrawalModal
+            isOpen={showWithdrawalModal}
+            onClose={() => setShowWithdrawalModal(false)}
+          />
 
-      <AlertDialog open={showRescueAlert} onOpenChange={setShowRescueAlert}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Você precisa fazer algum depósito</AlertDialogTitle>
-            <AlertDialogDescription>
-              Para resgatar o bônus em dólar, faça seu primeiro depósito.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowRescueAlert(false)}>Fechar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <AlertDialog open={showRescueAlert} onOpenChange={setShowRescueAlert}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Você precisa fazer algum depósito</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Para resgatar o bônus em dólar, faça seu primeiro depósito.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setShowRescueAlert(false)}>Fechar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
-      <MobileMenu isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} />
+          <MobileMenu isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} />
 
-      {user && (
-        <BottomNav
-          onDepositClick={() => setShowDepositModal(true)}
-          onMenuClick={() => setShowMobileMenu(true)}
-        />
-      )}
-    </div>
+          {user && (
+            <BottomNav
+              onDepositClick={() => setShowDepositModal(true)}
+              onMenuClick={() => setShowMobileMenu(true)}
+            />
+          )}
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
