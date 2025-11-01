@@ -60,25 +60,29 @@ serve(async (req) => {
       apiUrl: apiSettings.api_key
     });
 
+    // Prepare form-encoded payload (some VPS setups expect x-www-form-urlencoded)
+    const params = new URLSearchParams();
+    params.append('agentToken', apiSettings.operator_token);
+    params.append('agentCode', apiSettings.provider_code || 'VORTEX001');
+    params.append('user_code', userId);
+    params.append('userId', userId);
+    params.append('username', profile.full_name || profile.email);
+    const intBalance = String(Math.floor(Number(profile.balance)));
+    // Send several synonyms for balance to maximize compatibility
+    params.append('saldo', intBalance);
+    params.append('balance', intBalance);
+    params.append('user_balance', intBalance);
+    params.append('userBalance', intBalance);
+    params.append('User Balance', intBalance);
+    params.append('gameCode', gameCode);
+
     // Call VPS API to launch game
     const launchResponse = await fetch(`${apiSettings.api_key}/api/v1/game_launch`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        agentToken: apiSettings.operator_token,
-        agentCode: apiSettings.provider_code || 'VORTEX001',
-        user_code: userId,
-        userId: userId,
-        username: profile.full_name || profile.email,
-        saldo: Math.floor(Number(profile.balance)),
-        balance: Math.floor(Number(profile.balance)),
-        user_balance: Math.floor(Number(profile.balance)),
-        userBalance: Math.floor(Number(profile.balance)),
-        ['User Balance']: Math.floor(Number(profile.balance)),
-        gameCode: gameCode,
-      }),
+      body: params,
     });
 
     if (!launchResponse.ok) {
