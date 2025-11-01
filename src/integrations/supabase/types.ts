@@ -23,6 +23,7 @@ export type Database = {
           operator_token: string | null
           provider_code: string | null
           rtp: number | null
+          secret_key: string | null
           updated_at: string | null
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           operator_token?: string | null
           provider_code?: string | null
           rtp?: number | null
+          secret_key?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -43,6 +45,7 @@ export type Database = {
           operator_token?: string | null
           provider_code?: string | null
           rtp?: number | null
+          secret_key?: string | null
           updated_at?: string | null
         }
         Relationships: []

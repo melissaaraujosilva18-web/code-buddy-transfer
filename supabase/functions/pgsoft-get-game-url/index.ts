@@ -33,8 +33,8 @@ serve(async (req) => {
       .eq('is_active', true)
       .maybeSingle();
 
-    if (settingsError || !apiSettings || !apiSettings.api_key) {
-      throw new Error('Configure a URL da API no painel Admin primeiro');
+    if (settingsError || !apiSettings || !apiSettings.api_key || !apiSettings.secret_key) {
+      throw new Error('Configure a URL da API e a Secret Key no painel Admin primeiro');
     }
 
     // Get user profile
@@ -63,6 +63,7 @@ serve(async (req) => {
     // Prepare form-encoded payload
     const params = new URLSearchParams();
     params.append('agentToken', apiSettings.operator_token);
+    params.append('secretKey', apiSettings.secret_key);
     params.append('agentCode', apiSettings.provider_code || 'VORTEX001');
     params.append('user_code', userId);
     params.append('userId', userId);

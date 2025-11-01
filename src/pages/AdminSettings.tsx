@@ -14,6 +14,7 @@ export default function AdminSettings() {
   const navigate = useNavigate();
   const [apiKey, setApiKey] = useState("");
   const [operatorToken, setOperatorToken] = useState("");
+  const [secretKey, setSecretKey] = useState("");
   const [providerCode, setProviderCode] = useState("PS");
   const [rtp, setRtp] = useState("96");
   const [copied, setCopied] = useState(false);
@@ -37,6 +38,7 @@ export default function AdminSettings() {
       setSettingsId(data.id);
       setApiKey(data.api_key || "");
       setOperatorToken(data.operator_token || "");
+      setSecretKey(data.secret_key || "");
       setProviderCode(data.provider_code || "PS");
       setRtp(data.rtp?.toString() || "96");
     }
@@ -54,6 +56,7 @@ export default function AdminSettings() {
       .update({
         api_key: apiKey,
         operator_token: operatorToken,
+        secret_key: secretKey,
         provider_code: providerCode,
         rtp: parseInt(rtp),
         updated_at: new Date().toISOString()
@@ -182,6 +185,20 @@ export default function AdminSettings() {
               />
               <p className="text-xs text-muted-foreground">
                 Token configurado na tabela 'agents' do MySQL (campo agentToken)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="secret-key">Secret Key *</Label>
+              <Input
+                id="secret-key"
+                type="password"
+                value={secretKey}
+                onChange={(e) => setSecretKey(e.target.value)}
+                placeholder="Digite a Secret Key"
+              />
+              <p className="text-xs text-muted-foreground">
+                Chave secreta configurada na tabela 'agents' do MySQL (campo secretKey)
               </p>
             </div>
 
@@ -373,7 +390,7 @@ export default function AdminSettings() {
           <Button 
             onClick={handleSaveSettings} 
             className="flex-1"
-            disabled={!apiKey || !operatorToken}
+            disabled={!apiKey || !operatorToken || !secretKey}
           >
             Salvar Configurações
           </Button>
