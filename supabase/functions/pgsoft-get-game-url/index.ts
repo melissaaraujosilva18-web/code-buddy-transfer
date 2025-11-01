@@ -143,9 +143,14 @@ serve(async (req) => {
       );
     }
 
-    // Keep the original URL returned by the provider (do not rewrite domain)
-    // Some providers require specific subdomains (e.g., m.pgsoft.com) to work correctly
-    // so we must NOT modify it here.
+    // 🎯 FIX: Replace hardcoded pgsoft.com domain with actual VPS URL
+    // The VPS API returns https://m.pgsoft.com/126/index.html but games are hosted locally
+    // at the VPS in the /public folder, so we need to rewrite the URL to point to the VPS
+    if (resolvedGameUrl.includes('m.pgsoft.com')) {
+      const vpsBaseUrl = apiSettings.api_key.replace(/\/$/, ''); // Remove trailing slash
+      resolvedGameUrl = resolvedGameUrl.replace('https://m.pgsoft.com', vpsBaseUrl);
+      console.log('🔧 Fixed game URL to point to VPS:', resolvedGameUrl);
+    }
 
     console.log('Game launched successfully, final URL:', resolvedGameUrl);
 
