@@ -68,11 +68,14 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         agentToken: apiSettings.operator_token,
-        agentCode: apiSettings.provider_code || 'VORTEX',
+        agentCode: apiSettings.provider_code || 'VORTEX001',
         user_code: userId,
         userId: userId,
         username: profile.full_name || profile.email,
         saldo: Math.floor(Number(profile.balance)),
+        balance: Math.floor(Number(profile.balance)),
+        user_balance: Math.floor(Number(profile.balance)),
+        userBalance: Math.floor(Number(profile.balance)),
         gameCode: gameCode,
       }),
     });
@@ -87,6 +90,15 @@ serve(async (req) => {
 
     // Log full response for debugging in edge logs (safe, server-side only)
     console.log('VPS launch response payload:', JSON.stringify(gameData));
+
+    // If VPS reports an error, bubble it up clearly to the client
+    if (gameData?.status === 'error' || gameData?.success === false) {
+      const message = gameData?.message || gameData?.error || 'Erro desconhecido na API do VPS';
+      return new Response(
+        JSON.stringify({ error: `VPS: ${message}` }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Try to resolve the game URL from multiple possible keys / nesting
     const nested = (obj: any, ...keys: string[]): string | undefined => {
