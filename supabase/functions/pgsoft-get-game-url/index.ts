@@ -110,7 +110,7 @@ serve(async (req) => {
       }
     };
 
-    const resolvedGameUrl =
+    let resolvedGameUrl =
       gameData?.launch_url ||
       gameData?.url ||
       gameData?.gameUrl ||
@@ -132,7 +132,10 @@ serve(async (req) => {
       );
     }
 
-    console.log('Game launched successfully');
+    // Fix: Replace m.pgsoft.com with pgsoft.com (mobile subdomain doesn't resolve DNS)
+    resolvedGameUrl = resolvedGameUrl.replace('m.pgsoft.com', 'pgsoft.com');
+
+    console.log('Game launched successfully, final URL:', resolvedGameUrl);
 
     return new Response(
       JSON.stringify({
