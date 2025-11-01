@@ -132,8 +132,9 @@ serve(async (req) => {
       );
     }
 
-    // Fix: Replace m.pgsoft.com with pgsoft.com (mobile subdomain doesn't resolve DNS)
-    resolvedGameUrl = resolvedGameUrl.replace('m.pgsoft.com', 'pgsoft.com');
+    // Keep the original URL returned by the provider (do not rewrite domain)
+    // Some providers require specific subdomains (e.g., m.pgsoft.com) to work correctly
+    // so we must NOT modify it here.
 
     console.log('Game launched successfully, final URL:', resolvedGameUrl);
 
