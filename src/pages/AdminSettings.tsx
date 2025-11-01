@@ -137,9 +137,9 @@ export default function AdminSettings() {
       <div className="grid gap-6 max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>Credenciais da API PGSOFT</CardTitle>
+            <CardTitle>Configurações da API de Jogos (VPS)</CardTitle>
             <CardDescription>
-              Configure as credenciais de acesso à API PGSOFT.
+              Configure a conexão com sua API de jogos instalada no VPS.
               <br />
               <a 
                 href="https://github.com/mrdamaia/Api-PGSOFT" 
@@ -147,49 +147,54 @@ export default function AdminSettings() {
                 rel="noopener noreferrer"
                 className="text-primary hover:underline text-sm"
               >
-                📖 Ver documentação da API no GitHub
+                📖 Ver documentação completa no GitHub
               </a>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Alert>
+              <AlertDescription>
+                <strong>Importante:</strong> Primeiro instale a API no VPS, depois configure aqui.
+              </AlertDescription>
+            </Alert>
+
             <div className="space-y-2">
-              <Label htmlFor="api-key">API Key *</Label>
+              <Label htmlFor="api-key">URL da API no VPS *</Label>
               <Input
                 id="api-key"
-                type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Digite a API Key"
+                placeholder="https://seu-vps.com ou http://seu-ip:3000"
               />
               <p className="text-xs text-muted-foreground">
-                Chave de autenticação fornecida pela PGSoft
+                URL completa do servidor onde a API está rodando
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="operator-token">Operator Token *</Label>
+              <Label htmlFor="operator-token">Agent Token *</Label>
               <Input
                 id="operator-token"
                 type="password"
                 value={operatorToken}
                 onChange={(e) => setOperatorToken(e.target.value)}
-                placeholder="Digite o Operator Token"
+                placeholder="Digite o Agent Token"
               />
               <p className="text-xs text-muted-foreground">
-                Token do operador para integração com a plataforma
+                Token configurado na tabela 'agents' do MySQL (campo agentToken)
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="provider-code">Provider Code</Label>
+              <Label htmlFor="provider-code">Agent Code</Label>
               <Input
                 id="provider-code"
                 value={providerCode}
                 onChange={(e) => setProviderCode(e.target.value)}
-                placeholder="PS"
+                placeholder="VORTEX"
               />
               <p className="text-xs text-muted-foreground">
-                Código do provedor (padrão: PS para PGSoft)
+                Código do agente na tabela 'agents' (campo agentCode)
               </p>
             </div>
           </CardContent>
@@ -234,23 +239,23 @@ export default function AdminSettings() {
           <CardHeader>
             <CardTitle>URLs dos Webhooks</CardTitle>
             <CardDescription>
-              Configure estas URLs na plataforma PGSoft para integração automática
+              Configure estas URLs nos provedores externos e na API do VPS
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Webhook PGSoft (Apostas e Ganhos)</Label>
+              <Label>Callback da API de Jogos (VPS) 🎯</Label>
               <div className="flex gap-2">
                 <Input
                   readOnly
-                  value="https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/pgsoft-webhook"
+                  value="https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/game-api-callback"
                   className="font-mono text-xs"
                 />
                 <Button
                   size="icon"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText("https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/pgsoft-webhook");
+                    navigator.clipboard.writeText("https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/game-api-callback");
                     toast.success("URL copiada!");
                   }}
                 >
@@ -258,7 +263,7 @@ export default function AdminSettings() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                URL para receber callbacks de apostas, ganhos e rollbacks
+                Configure na tabela 'agents' do MySQL (campo callbackurl)
               </p>
             </div>
 
@@ -312,12 +317,17 @@ export default function AdminSettings() {
 
             <Alert>
               <AlertDescription>
-                <strong>Como configurar na Oasyfy:</strong>
-                <ol className="list-decimal list-inside mt-2 space-y-1">
-                  <li>Acesse o painel da Oasyfy</li>
-                  <li>Vá em Configurações → Webhooks</li>
-                  <li>Cole as URLs acima nos campos correspondentes</li>
-                  <li>Salve as configurações</li>
+                <strong>Configurações importantes:</strong>
+                <br /><br />
+                <strong>1. Na API do VPS (MySQL - tabela agents):</strong>
+                <ol className="list-decimal list-inside mt-1 space-y-1">
+                  <li>Adicione registro com agentToken e secretKey</li>
+                  <li>Configure callbackurl com a URL do game-api-callback acima</li>
+                </ol>
+                <br />
+                <strong>2. Na Oasyfy:</strong>
+                <ol className="list-decimal list-inside mt-1 space-y-1">
+                  <li>Configure webhooks de depósito e taxa</li>
                 </ol>
               </AlertDescription>
             </Alert>

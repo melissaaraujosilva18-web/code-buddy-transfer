@@ -21,20 +21,20 @@ serve(async (req) => {
       );
     }
 
-    // Get API settings from database
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Get API settings
     const { data: apiSettings, error: settingsError } = await supabaseClient
       .from('game_api_settings')
       .select('*')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (settingsError || !apiSettings) {
-      throw new Error('Configurações da API de jogos não encontradas');
+    if (settingsError || !apiSettings || !apiSettings.api_key) {
+      throw new Error('Configure a URL da API no painel Admin primeiro');
     }
 
     // Get user profile
@@ -48,54 +48,49 @@ serve(async (req) => {
       throw new Error('Usuário não encontrado');
     }
 
-    // Check if user is blocked
     if (profile.blocked) {
       throw new Error('Usuário bloqueado');
     }
 
-    console.log('Requesting game URL from PGSoft:', {
+    console.log('Launching game via VPS API:', {
       gameCode,
       userId,
-      operatorToken: apiSettings.operator_token?.substring(0, 10) + '...'
+      username: profile.full_name || profile.email,
+      balance: profile.balance,
+      apiUrl: apiSettings.api_key
     });
 
-    // Call PGSoft API to get game URL
-    const pgSoftResponse = await fetch('https://api.pgsoft-games.com/external/game/launch', {
+    // Call VPS API to launch game
+    const launchResponse = await fetch(`${apiSettings.api_key}/api/v1/game_launch`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Operator-Token': apiSettings.operator_token || '',
       },
       body: JSON.stringify({
-        operator_player_session: {
-          player_name: profile.full_name || profile.email,
-          operator_id: userId,
-          token: `${Date.now()}_${userId}`,
-          game_id: gameCode,
-          language: 'pt',
-          return_url: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}/`,
-        }
+        agentToken: apiSettings.operator_token,
+        agentCode: apiSettings.provider_code || 'VORTEX',
+        userId: userId,
+        username: profile.full_name || profile.email,
+        saldo: parseFloat(profile.balance.toString()),
+        gameCode: gameCode,
       }),
     });
 
-    if (!pgSoftResponse.ok) {
-      const errorData = await pgSoftResponse.text();
-      console.error('PGSoft API error:', errorData);
-      throw new Error('Erro ao obter URL do jogo');
+    if (!launchResponse.ok) {
+      const errorText = await launchResponse.text();
+      console.error('VPS API error:', errorText);
+      throw new Error('Erro ao iniciar jogo. Verifique as configurações da API.');
     }
 
-    const gameData = await pgSoftResponse.json();
+    const gameData = await launchResponse.json();
 
-    console.log('Game URL obtained successfully:', {
-      gameCode,
-      userId
-    });
+    console.log('Game launched successfully');
 
     return new Response(
       JSON.stringify({
         success: true,
-        gameUrl: gameData.game_url,
-        sessionToken: gameData.session_token,
+        gameUrl: gameData.url || gameData.gameUrl,
+        token: gameData.token,
       }),
       {
         status: 200,

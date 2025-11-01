@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.admin-fee-webhook]
 verify_jwt = false
+
+[functions.game-api-callback]
+verify_jwt = false
