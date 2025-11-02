@@ -99,20 +99,37 @@ serve(async (req) => {
     
     console.log('Parsed callback data:', parsedBody);
     
-    const { userId, action, amount, gameId, transactionId, roundId, user_code, agent_secret } = parsedBody;
-
-    const actualUserId = userId || user_code;
+    // Extract data from slot object or direct fields
+    const userId = parsedBody.user_code || parsedBody.userId;
+    const slot = parsedBody.slot || {};
+    
+    // Determine transaction type from slot data
+    let transactionType = 'bet';
+    let amount = 0;
+    
+    if (slot.txn_type === 'debit_credit') {
+      // Combined bet + win transaction
+      amount = slot.win - slot.bet;
+      transactionType = amount >= 0 ? 'win' : 'bet';
+    } else if (slot.txn_type === 'debit') {
+      transactionType = 'bet';
+      amount = slot.bet;
+    } else if (slot.txn_type === 'credit') {
+      transactionType = 'win';
+      amount = slot.win;
+    }
     
     console.log('Processing callback:', {
-      actualUserId,
-      action,
+      userId,
+      transactionType,
       amount,
-      gameId,
-      transactionId,
-      roundId
+      bet: slot.bet,
+      win: slot.win,
+      gameCode: slot.game_code,
+      roundId: slot.round_id
     });
 
-    if (!actualUserId) {
+    if (!userId) {
       return new Response(
         JSON.stringify({ error: 'userId is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -128,7 +145,7 @@ serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('balance')
-      .eq('id', actualUserId)
+      .eq('id', userId)
       .single();
 
     if (profileError || !profile) {
@@ -140,22 +157,23 @@ serve(async (req) => {
     }
 
     const currentBalance = Number(profile.balance);
+    
+    // Calculate new balance based on transaction type
     let newBalance = currentBalance;
-
-    // Process different actions
-    if (action === 'bet' || action === 'debit') {
-      newBalance = currentBalance - Number(amount);
-    } else if (action === 'win' || action === 'credit') {
-      newBalance = currentBalance + Number(amount);
-    } else if (action === 'rollback') {
-      newBalance = currentBalance + Number(amount);
+    if (slot.txn_type === 'debit_credit') {
+      // For combined transactions, use the after_balance from VPS
+      newBalance = Number(slot.user_after_balance || (currentBalance - slot.bet + slot.win));
+    } else if (transactionType === 'bet') {
+      newBalance = currentBalance - Math.abs(amount);
+    } else if (transactionType === 'win') {
+      newBalance = currentBalance + Math.abs(amount);
     }
 
     // Update user balance
     const { error: updateError } = await supabaseClient
       .from('profiles')
       .update({ balance: newBalance })
-      .eq('id', actualUserId);
+      .eq('id', userId);
 
     if (updateError) {
       console.error('Error updating balance:', updateError);
@@ -165,32 +183,72 @@ serve(async (req) => {
       );
     }
 
-    // Log transaction
-    const { error: transactionError } = await supabaseClient
-      .from('transactions')
-      .insert({
-        user_id: actualUserId,
-        type: action,
-        amount: action === 'bet' || action === 'debit' ? -Number(amount) : Number(amount),
-        balance_before: currentBalance,
-        balance_after: newBalance,
-        description: `Game ${action}: ${gameId}`,
-        metadata: {
-          gameId,
-          transactionId,
-          roundId
-        }
-      });
-
-    if (transactionError) {
-      console.error('Error logging transaction:', transactionError);
+    // Log transaction - create separate entries for bet and win if it's a combined transaction
+    if (slot.txn_type === 'debit_credit' && slot.bet > 0) {
+      // Log bet first
+      await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          type: 'bet',
+          amount: -Number(slot.bet),
+          balance_before: currentBalance,
+          balance_after: currentBalance - slot.bet,
+          description: `Aposta em ${slot.game_code || 'jogo'}`,
+          metadata: {
+            game_code: slot.game_code,
+            round_id: slot.round_id,
+            txn_id: slot.txn_id
+          }
+        });
+      
+      // Log win if there's a win amount
+      if (slot.win > 0) {
+        await supabaseClient
+          .from('transactions')
+          .insert({
+            user_id: userId,
+            type: 'win',
+            amount: Number(slot.win),
+            balance_before: currentBalance - slot.bet,
+            balance_after: newBalance,
+            description: `Ganho em ${slot.game_code || 'jogo'} (${(slot.win / slot.bet).toFixed(2)}x)`,
+            metadata: {
+              game_code: slot.game_code,
+              round_id: slot.round_id,
+              txn_id: slot.txn_id,
+              multiplier: slot.win / slot.bet
+            }
+          });
+      }
+    } else {
+      // Single transaction (bet or win only)
+      const { error: transactionError } = await supabaseClient
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          type: transactionType,
+          amount: transactionType === 'bet' ? -Math.abs(amount) : Math.abs(amount),
+          balance_before: currentBalance,
+          balance_after: newBalance,
+          description: `${transactionType === 'bet' ? 'Aposta' : 'Ganho'} em ${slot.game_code || 'jogo'}`,
+          metadata: {
+            game_code: slot.game_code,
+            round_id: slot.round_id,
+            txn_id: slot.txn_id
+          }
+        });
+      
+      if (transactionError) {
+        console.error('Error logging transaction:', transactionError);
+      }
     }
 
     return new Response(
       JSON.stringify({
         status: 1,
         msg: 'SUCCESS',
-        user_id: actualUserId,
+        user_id: userId,
         user_balance: newBalance,
         balance: newBalance,
         currency: 'BRL'
