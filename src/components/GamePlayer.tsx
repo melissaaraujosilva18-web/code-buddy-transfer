@@ -23,7 +23,7 @@ export default function GamePlayer({ gameUrl, gameName }: GamePlayerProps) {
         setBlocked(true);
         setLoading(false);
       }
-    }, 2500);
+    }, 12000);
 
     return () => clearTimeout(fallbackTimer);
   }, [iframeLoaded]);
@@ -47,24 +47,21 @@ export default function GamePlayer({ gameUrl, gameName }: GamePlayerProps) {
       {!loading && blocked && (
         <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-background/90 p-6 text-center">
           <p className="text-foreground text-sm max-w-md">
-            Não foi possível carregar {gameName} dentro do app. Abra o jogo em nova aba ou nesta janela.
+            Conexão lenta ao carregar {gameName}. Deseja tentar novamente?
           </p>
           <div className="flex gap-2">
             <Button
-              onClick={() => window.open(gameUrl, '_blank', 'noopener,noreferrer')}
+              onClick={() => {
+                if (iframeRef.current) {
+                  iframeRef.current.setAttribute('src', gameUrl);
+                  setLoading(true);
+                  setBlocked(false);
+                }
+              }}
               className="rounded-full"
-              variant="secondary"
-              aria-label={`Abrir ${gameName} em nova aba`}
+              aria-label={`Recarregar ${gameName}`}
             >
-              Abrir em nova aba
-            </Button>
-            <Button
-              onClick={() => { window.location.href = gameUrl; }}
-              className="rounded-full"
-              aria-label={`Abrir ${gameName} nesta janela`}
-              variant="default"
-            >
-              Abrir aqui
+              Tentar novamente
             </Button>
           </div>
         </div>
@@ -79,14 +76,6 @@ export default function GamePlayer({ gameUrl, gameName }: GamePlayerProps) {
           aria-label="Voltar"
         >
           <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <Button
-          onClick={() => window.open(gameUrl, '_blank', 'noopener,noreferrer')}
-          className="rounded-full"
-          aria-label={`Abrir ${gameName} em nova aba`}
-          variant="secondary"
-        >
-          Abrir em nova aba
         </Button>
       </div>
 
