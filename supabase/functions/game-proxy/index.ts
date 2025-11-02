@@ -37,9 +37,21 @@ serve(async (req) => {
     }
 
     const contentType = gameResponse.headers.get('content-type') || 'text/html';
-    const body = await gameResponse.text();
+    let body = await gameResponse.text();
     
     console.log('Successfully fetched game, content length:', body.length);
+
+    // Fix Socket.IO connection to point to VPS instead of proxy domain
+    const vpsUrl = new URL(targetUrl);
+    const vpsOrigin = `${vpsUrl.protocol}//${vpsUrl.hostname}`;
+    
+    if (body.includes('socket.io') && body.includes('window.location.hostname')) {
+      console.log('Fixing Socket.IO connection to point to:', vpsOrigin);
+      body = body.replace(
+        /const host_name = window\.location\.protocol \+ "\/\/" \+ window\.location\.hostname \+ ":" \+ window\.location\.port;/g,
+        `const host_name = "${vpsOrigin}";`
+      );
+    }
 
     // Remove security headers that block iframes
     return new Response(body, {
