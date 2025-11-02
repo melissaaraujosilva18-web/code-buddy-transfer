@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, Check, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Copy, Check, AlertTriangle, Database } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -119,6 +119,19 @@ export default function AdminSettings() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const getCallbackUrl = () => {
+    return "https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/game-api-callback";
+  };
+
+  const getMySQLUpdateSQL = () => {
+    return `UPDATE agents 
+SET 
+  callbackurl = '${getCallbackUrl()}',
+  probganho = '${winProbability}',
+  probbonus = '${bonusProbability}'
+WHERE id = 1;`;
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -145,6 +158,85 @@ export default function AdminSettings() {
           <strong>Atenção:</strong> As credenciais da API são sensíveis. Mantenha-as seguras e não compartilhe com terceiros.
         </AlertDescription>
       </Alert>
+
+      {/* Instruções MySQL em Destaque */}
+      <Card className="border-blue-500 bg-blue-50/50 dark:bg-blue-950/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+            <Database className="h-5 w-5" />
+            📋 Passo a Passo: Configuração no MySQL (phpMyAdmin)
+          </CardTitle>
+          <CardDescription className="text-blue-600 dark:text-blue-300">
+            Após salvar as configurações abaixo, atualize sua tabela <code className="bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded">agents</code> no MySQL
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg p-4 space-y-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</span>
+                <Label className="text-base font-semibold">Acesse o phpMyAdmin</Label>
+              </div>
+              <p className="text-sm text-muted-foreground ml-8">
+                Navegue até: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">pgsoftvortex</code> → <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">agents</code>
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
+                <Label className="text-base font-semibold">Edite o registro (ou execute SQL)</Label>
+              </div>
+              <div className="ml-8 space-y-2">
+                <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-xs overflow-x-auto">
+                  <pre>{getMySQLUpdateSQL()}</pre>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(getMySQLUpdateSQL());
+                    toast.success("SQL copiado para área de transferência!");
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar SQL Completo
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
+                <Label className="text-base font-semibold">Valores a configurar:</Label>
+              </div>
+              <div className="ml-8 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg space-y-2">
+                <div className="grid gap-2 text-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="text-muted-foreground font-medium min-w-[120px]">callbackurl:</span>
+                    <code className="bg-white dark:bg-gray-900 px-2 py-1 rounded text-xs flex-1 break-all">{getCallbackUrl()}</code>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground font-medium">probganho:</span>
+                    <code className="bg-white dark:bg-gray-900 px-3 py-1 rounded font-bold">{winProbability}</code>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground font-medium">probbonus:</span>
+                    <code className="bg-white dark:bg-gray-900 px-3 py-1 rounded font-bold">{bonusProbability}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Alert className="ml-8">
+              <AlertDescription className="text-xs">
+                <strong>💡 Dica:</strong> Copie o SQL acima e execute na aba "SQL" do phpMyAdmin, ou edite manualmente 
+                clicando no ícone de lápis (✏️) na linha do registro na aba "Visualizar".
+              </AlertDescription>
+            </Alert>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 max-w-2xl">
         <Card>
