@@ -14,17 +14,42 @@ serve(async (req) => {
   try {
     // Check if the path is /game_callback
     const url = new URL(req.url);
+    console.log('Incoming request to gold_api:', {
+      method: req.method,
+      pathname: url.pathname,
+      search: url.search
+    });
+    
     if (!url.pathname.endsWith('/game_callback')) {
+      console.error('Invalid endpoint accessed:', url.pathname);
       return new Response(JSON.stringify({ error: 'Invalid endpoint' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const { userId, action, amount, gameId, transactionId, roundId } = await req.json();
+    const requestBody = await req.text();
+    console.log('Raw request body:', requestBody);
+    
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(requestBody);
+    } catch (e) {
+      console.error('Failed to parse JSON:', e);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('Parsed callback data:', parsedBody);
+    
+    const { userId, action, amount, gameId, transactionId, roundId, user_code, agent_secret } = parsedBody;
 
-    console.log('Game API callback received:', {
-      userId,
+    const actualUserId = userId || user_code;
+    
+    console.log('Processing callback:', {
+      actualUserId,
       action,
       amount,
       gameId,
@@ -32,7 +57,7 @@ serve(async (req) => {
       roundId
     });
 
-    if (!userId) {
+    if (!actualUserId) {
       return new Response(
         JSON.stringify({ error: 'userId is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -48,7 +73,7 @@ serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('balance')
-      .eq('id', userId)
+      .eq('id', actualUserId)
       .single();
 
     if (profileError || !profile) {
@@ -75,7 +100,7 @@ serve(async (req) => {
     const { error: updateError } = await supabaseClient
       .from('profiles')
       .update({ balance: newBalance })
-      .eq('id', userId);
+      .eq('id', actualUserId);
 
     if (updateError) {
       console.error('Error updating balance:', updateError);
@@ -89,7 +114,7 @@ serve(async (req) => {
     const { error: transactionError } = await supabaseClient
       .from('transactions')
       .insert({
-        user_id: userId,
+        user_id: actualUserId,
         type: action,
         amount: action === 'bet' || action === 'debit' ? -Number(amount) : Number(amount),
         balance_before: currentBalance,
