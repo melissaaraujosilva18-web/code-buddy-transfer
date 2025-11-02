@@ -70,6 +70,20 @@ function AdminContent() {
       color: "text-green-500",
     },
     {
+      title: "Gerenciar Provedores",
+      description: "Cadastrar e gerenciar provedores de jogos",
+      icon: Settings,
+      path: "/admin/providers",
+      color: "text-cyan-500",
+    },
+    {
+      title: "Gerenciar Jogos",
+      description: "Cadastrar e gerenciar catálogo de jogos",
+      icon: Trophy,
+      path: "/admin/games",
+      color: "text-pink-500",
+    },
+    {
       title: "Configurações da API",
       description: "Configurar credenciais e RTP dos jogos",
       icon: Settings,

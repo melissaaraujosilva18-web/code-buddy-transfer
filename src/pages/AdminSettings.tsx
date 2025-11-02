@@ -17,6 +17,9 @@ export default function AdminSettings() {
   const [secretKey, setSecretKey] = useState("");
   const [providerCode, setProviderCode] = useState("PS");
   const [rtp, setRtp] = useState("96");
+  const [callbackUrl, setCallbackUrl] = useState("");
+  const [winProbability, setWinProbability] = useState("2");
+  const [bonusProbability, setBonusProbability] = useState("2");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [settingsId, setSettingsId] = useState<string | null>(null);
@@ -41,6 +44,9 @@ export default function AdminSettings() {
       setSecretKey(data.secret_key || "");
       setProviderCode(data.provider_code || "PS");
       setRtp(data.rtp?.toString() || "96");
+      setCallbackUrl(data.callback_url || "");
+      setWinProbability(data.win_probability?.toString() || "2");
+      setBonusProbability(data.bonus_probability?.toString() || "2");
     }
     setLoading(false);
   };
@@ -59,6 +65,9 @@ export default function AdminSettings() {
         secret_key: secretKey,
         provider_code: providerCode,
         rtp: parseInt(rtp),
+        callback_url: callbackUrl,
+        win_probability: parseInt(winProbability),
+        bonus_probability: parseInt(bonusProbability),
         updated_at: new Date().toISOString()
       })
       .eq("id", settingsId);
@@ -214,14 +223,27 @@ export default function AdminSettings() {
                 Código do agente na tabela 'agents' (campo agentCode)
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="callback-url">Callback URL</Label>
+              <Input
+                id="callback-url"
+                value={callbackUrl}
+                onChange={(e) => setCallbackUrl(e.target.value)}
+                placeholder="https://seu-dominio.com/"
+              />
+              <p className="text-xs text-muted-foreground">
+                URL do callback configurada no MySQL (lembre da barra final)
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Configuração de RTP (Return to Player)</CardTitle>
+            <CardTitle>Configuração de RTP e Probabilidades</CardTitle>
             <CardDescription>
-              Ajuste a porcentagem de retorno aos jogadores. O RTP determina quanto do total apostado é devolvido aos jogadores ao longo do tempo.
+              Ajuste as configurações de retorno e probabilidades de ganho/bônus
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -240,6 +262,40 @@ export default function AdminSettings() {
                 <p>• <strong>85-92%</strong>: Lucro alto para a casa (mais margem)</p>
                 <p>• <strong>96%</strong>: RTP padrão recomendado ✅ (4% de margem)</p>
                 <p>• <strong>97-99%</strong>: RTP alto (menos margem, mais ganhos aos jogadores)</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="win-probability">Probabilidade de Ganho</Label>
+                <Input
+                  id="win-probability"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={winProbability}
+                  onChange={(e) => setWinProbability(e.target.value)}
+                  placeholder="2"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Quanto maior, mais ganhos. 1 = 10%, 2 = 20%, 0.02 = 2%
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bonus-probability">Probabilidade de Bônus</Label>
+                <Input
+                  id="bonus-probability"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={bonusProbability}
+                  onChange={(e) => setBonusProbability(e.target.value)}
+                  placeholder="2"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Quanto maior, mais bônus. 1 = 10%, 2 = 20%, 0.02 = 2%
+                </p>
               </div>
             </div>
 

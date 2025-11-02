@@ -15,6 +15,8 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminBets from "./pages/AdminBets";
 import AdminTransactions from "./pages/AdminTransactions";
 import AdminSettings from "./pages/AdminSettings";
+import AdminProviders from "./pages/AdminProviders";
+import AdminGames from "./pages/AdminGames";
 import AllGames from "./pages/AllGames";
 import { AuthProvider } from "./hooks/useAuth";
 
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/admin/bets" element={<AdminBets />} />
             <Route path="/admin/transactions" element={<AdminTransactions />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/providers" element={<AdminProviders />} />
+            <Route path="/admin/games" element={<AdminGames />} />
             <Route path="/all-games" element={<AllGames />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
