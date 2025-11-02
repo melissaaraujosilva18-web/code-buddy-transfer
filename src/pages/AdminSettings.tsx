@@ -150,6 +150,9 @@ export default function AdminSettings() {
   const getMySQLUpdateSQL = () => {
     return `UPDATE agents 
 SET 
+  agentToken = '${operatorToken}',
+  secretKey = '${secretKey}',
+  agentCode = '${providerCode}',
   callbackurl = '${getCallbackUrl()}',
   probganho = '${winProbability}',
   probbonus = '${bonusProbability}'
