@@ -516,14 +516,14 @@ WHERE id = 1;`;
               <div className="flex gap-2">
                 <Input
                   readOnly
-                  value="https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/game-api-callback"
+                  value={getCallbackUrl()}
                   className="font-mono text-xs"
                 />
                 <Button
                   size="icon"
                   variant="outline"
                   onClick={() => {
-                    navigator.clipboard.writeText("https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/game-api-callback");
+                    navigator.clipboard.writeText(getCallbackUrl());
                     toast.success("URL copiada!");
                   }}
                 >
