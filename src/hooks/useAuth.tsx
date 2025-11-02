@@ -106,6 +106,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Realtime subscription to profile updates (e.g., balance)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-updates:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => {
+          const newRow = payload.new as any;
+          setProfile((prev) => prev ? {
+            ...prev,
+            ...newRow,
+            withdrawal_status: newRow.withdrawal_status as 'processing' | 'awaiting_fee' | null,
+            pix_key_type: newRow.pix_key_type as 'cpf' | 'email' | 'phone' | 'random' | null,
+          } : {
+            id: newRow.id,
+            email: newRow.email,
+            full_name: newRow.full_name,
+            balance: Number(newRow.balance),
+            has_deposited: !!newRow.has_deposited,
+            bonus_claimed: !!newRow.bonus_claimed,
+            pix_key: newRow.pix_key,
+            pix_key_type: newRow.pix_key_type as 'cpf' | 'email' | 'phone' | 'random' | null,
+            pix_name: newRow.pix_name,
+            withdrawal_status: newRow.withdrawal_status as 'processing' | 'awaiting_fee' | null,
+            withdrawal_amount: Number(newRow.withdrawal_amount),
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
