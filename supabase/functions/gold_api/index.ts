@@ -133,7 +133,10 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
+        status: 1,
+        msg: 'SUCCESS',
+        user_id: actualUserId,
+        user_balance: newBalance,
         balance: newBalance,
         currency: 'BRL'
       }),
