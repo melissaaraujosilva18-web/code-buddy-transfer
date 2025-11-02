@@ -144,7 +144,7 @@ export default function AdminSettings() {
   };
 
   const getCallbackUrl = () => {
-    return "https://ryuexvaocxzqpfcekejh.supabase.co/functions/v1/game-api-callback";
+    return "https://api.vortexbet.lat/api/v1/game_launch";
   };
 
   const getMySQLUpdateSQL = () => {
