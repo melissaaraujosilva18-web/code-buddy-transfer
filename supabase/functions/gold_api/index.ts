@@ -12,7 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    // Check if the path is /game_callback
     const url = new URL(req.url);
     console.log('Incoming request to gold_api:', {
       method: req.method,
@@ -20,6 +19,62 @@ serve(async (req) => {
       search: url.search
     });
     
+    // Handle user_balance endpoint
+    if (url.pathname.endsWith('/user_balance')) {
+      const requestBody = await req.text();
+      console.log('User balance request body:', requestBody);
+      
+      let parsedBody;
+      try {
+        parsedBody = JSON.parse(requestBody);
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      const userId = parsedBody.user_code || parsedBody.userId;
+      
+      if (!userId) {
+        return new Response(JSON.stringify({ error: 'user_code is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('balance')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError || !profile) {
+        return new Response(JSON.stringify({ 
+          status: 0,
+          msg: 'User not found' 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      return new Response(JSON.stringify({
+        status: 1,
+        msg: 'SUCCESS',
+        user_balance: Number(profile.balance)
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Check if the path is /game_callback
     if (!url.pathname.endsWith('/game_callback')) {
       console.error('Invalid endpoint accessed:', url.pathname);
       return new Response(JSON.stringify({ error: 'Invalid endpoint' }), {
