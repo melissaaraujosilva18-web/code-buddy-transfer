@@ -53,6 +53,12 @@ serve(async (req) => {
       );
     }
 
+    // Fix all relative URLs to point to VPS (for images, scripts, CSS, etc)
+    console.log('Fixing relative URLs to point to VPS');
+    body = body.replace(/src="\/([^"]+)"/g, `src="${vpsOrigin}/$1"`);
+    body = body.replace(/href="\/([^"]+)"/g, `href="${vpsOrigin}/$1"`);
+    body = body.replace(/url\(\/([^)]+)\)/g, `url(${vpsOrigin}/$1)`);
+
     // Remove security headers that block iframes
     return new Response(body, {
       headers: {
