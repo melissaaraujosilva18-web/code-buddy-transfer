@@ -156,6 +156,18 @@ SET
 WHERE id = 1;`;
   };
 
+  const downloadMySQLScript = () => {
+    const sql = getMySQLUpdateSQL();
+    const blob = new Blob([sql], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'configurar_agents.sql';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success("SQL baixado! Execute no phpMyAdmin.");
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -248,17 +260,27 @@ WHERE id = 1;`;
                 <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-xs overflow-x-auto">
                   <pre>{getMySQLUpdateSQL()}</pre>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(getMySQLUpdateSQL());
-                    toast.success("SQL copiado para área de transferência!");
-                  }}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copiar SQL Completo
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(getMySQLUpdateSQL());
+                      toast.success("SQL copiado para área de transferência!");
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copiar SQL
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={downloadMySQLScript}
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    Baixar SQL
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -285,10 +307,12 @@ WHERE id = 1;`;
               </div>
             </div>
 
-            <Alert className="ml-8">
-              <AlertDescription className="text-xs">
-                <strong>💡 Dica:</strong> Copie o SQL acima e execute na aba "SQL" do phpMyAdmin, ou edite manualmente 
-                clicando no ícone de lápis (✏️) na linha do registro na aba "Visualizar".
+            <Alert className="ml-8 border-red-500/50 bg-red-50 dark:bg-red-950/30">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-sm text-red-900 dark:text-red-100">
+                <strong>⚠️ Importante:</strong> Eu não consigo executar este SQL automaticamente porque o MySQL está no seu servidor VPS privado.
+                <br />
+                Você precisa executar manualmente no phpMyAdmin (é rápido, leva 30 segundos).
               </AlertDescription>
             </Alert>
           </div>
