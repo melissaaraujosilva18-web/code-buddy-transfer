@@ -17,6 +17,8 @@ export type Database = {
       game_api_settings: {
         Row: {
           api_key: string | null
+          bonus_probability: number | null
+          callback_url: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
@@ -25,9 +27,12 @@ export type Database = {
           rtp: number | null
           secret_key: string | null
           updated_at: string | null
+          win_probability: number | null
         }
         Insert: {
           api_key?: string | null
+          bonus_probability?: number | null
+          callback_url?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -36,9 +41,12 @@ export type Database = {
           rtp?: number | null
           secret_key?: string | null
           updated_at?: string | null
+          win_probability?: number | null
         }
         Update: {
           api_key?: string | null
+          bonus_probability?: number | null
+          callback_url?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -47,6 +55,7 @@ export type Database = {
           rtp?: number | null
           secret_key?: string | null
           updated_at?: string | null
+          win_probability?: number | null
         }
         Relationships: []
       }
@@ -94,6 +103,62 @@ export type Database = {
           win_amount?: number | null
         }
         Relationships: []
+      }
+      games: {
+        Row: {
+          category: string | null
+          cover: string | null
+          created_at: string | null
+          distribution: string | null
+          game_code: string
+          game_id: string
+          game_name: string
+          id: string
+          provider_id: string | null
+          rtp: number | null
+          status: boolean | null
+          technology: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          cover?: string | null
+          created_at?: string | null
+          distribution?: string | null
+          game_code: string
+          game_id: string
+          game_name: string
+          id?: string
+          provider_id?: string | null
+          rtp?: number | null
+          status?: boolean | null
+          technology?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          cover?: string | null
+          created_at?: string | null
+          distribution?: string | null
+          game_code?: string
+          game_id?: string
+          game_name?: string
+          id?: string
+          provider_id?: string | null
+          rtp?: number | null
+          status?: boolean | null
+          technology?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -143,6 +208,39 @@ export type Database = {
           updated_at?: string
           withdrawal_amount?: number
           withdrawal_status?: string | null
+        }
+        Relationships: []
+      }
+      providers: {
+        Row: {
+          code: string
+          created_at: string | null
+          distribution: string | null
+          id: string
+          name: string
+          rtp: number | null
+          status: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          distribution?: string | null
+          id?: string
+          name: string
+          rtp?: number | null
+          status?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          distribution?: string | null
+          id?: string
+          name?: string
+          rtp?: number | null
+          status?: boolean | null
+          updated_at?: string | null
         }
         Relationships: []
       }
