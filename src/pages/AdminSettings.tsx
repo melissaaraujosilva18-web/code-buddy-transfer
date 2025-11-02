@@ -23,6 +23,30 @@ export default function AdminSettings() {
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [settingsId, setSettingsId] = useState<string | null>(null);
+  const [showGenerated, setShowGenerated] = useState(false);
+
+  // Função para gerar valores aleatórios seguros
+  const generateSecureToken = (length: number = 32) => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const handleGenerateCredentials = () => {
+    const newAgentToken = generateSecureToken(40);
+    const newSecretKey = generateSecureToken(40);
+    const newAgentCode = `VORTEX${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    
+    setOperatorToken(newAgentToken);
+    setSecretKey(newSecretKey);
+    setProviderCode(newAgentCode);
+    setShowGenerated(true);
+    
+    toast.success("Credenciais geradas! Agora configure a URL da API e salve.");
+  };
 
   useEffect(() => {
     loadSettings();
@@ -152,19 +176,45 @@ WHERE id = 1;`;
         </div>
       </div>
 
-      <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
-        <Check className="h-5 w-5 text-green-600" />
-        <AlertDescription className="text-green-900 dark:text-green-100">
-          <div className="space-y-2">
-            <p className="font-bold text-base">✅ Como fazer os jogos funcionarem:</p>
-            <ol className="list-decimal list-inside space-y-1 text-sm">
-              <li>Preencha os <strong>4 campos principais</strong> abaixo com os dados do seu MySQL</li>
-              <li>Clique em <strong>"Salvar Configurações"</strong></li>
-              <li>Pronto! Os jogos vão funcionar automaticamente 🎮</li>
-            </ol>
-          </div>
-        </AlertDescription>
-      </Alert>
+      <Card className="border-2 border-green-500 bg-green-50 dark:bg-green-950">
+        <CardHeader>
+          <CardTitle className="text-green-700 dark:text-green-300 flex items-center gap-2">
+            🎲 Gerar Credenciais Automaticamente
+          </CardTitle>
+          <CardDescription className="text-green-600 dark:text-green-400">
+            Não tem os tokens e keys? Clique aqui para gerar automaticamente!
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button 
+            onClick={handleGenerateCredentials}
+            className="w-full h-14 text-lg font-bold"
+            variant="default"
+          >
+            ✨ Gerar Tokens e Keys Agora
+          </Button>
+
+          {showGenerated && (
+            <Alert className="bg-yellow-50 dark:bg-yellow-950 border-yellow-500">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              <AlertDescription className="space-y-3">
+                <p className="font-bold text-yellow-900 dark:text-yellow-100">
+                  🎉 Credenciais geradas com sucesso!
+                </p>
+                <div className="space-y-2 text-sm">
+                  <p className="font-semibold text-yellow-900 dark:text-yellow-100">📋 Próximos passos:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-yellow-800 dark:text-yellow-200">
+                    <li>Preencha apenas a <strong>URL da API</strong> abaixo (ex: http://204.216.174.232:888)</li>
+                    <li>Clique em <strong>"Salvar Configurações"</strong></li>
+                    <li>Copie o <strong>SQL do card azul</strong> no topo e execute no MySQL</li>
+                    <li>Pronto! Os jogos funcionarão 🎮</li>
+                  </ol>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Instruções MySQL em Destaque */}
       <Card className="border-blue-500 bg-blue-50/50 dark:bg-blue-950/20">
