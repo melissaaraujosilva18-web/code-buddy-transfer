@@ -21,14 +21,25 @@ serve(async (req) => {
     console.log('Proxying game from:', targetUrl);
 
     // Fetch the game from VPS
-    const gameResponse = await fetch(targetUrl);
+    const gameResponse = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    console.log('VPS response status:', gameResponse.status);
+    console.log('VPS response headers:', Object.fromEntries(gameResponse.headers.entries()));
     
     if (!gameResponse.ok) {
-      throw new Error(`VPS returned ${gameResponse.status}`);
+      const errorText = await gameResponse.text();
+      console.error('VPS error response:', errorText);
+      throw new Error(`VPS returned ${gameResponse.status}: ${errorText}`);
     }
 
     const contentType = gameResponse.headers.get('content-type') || 'text/html';
     const body = await gameResponse.text();
+    
+    console.log('Successfully fetched game, content length:', body.length);
 
     // Remove security headers that block iframes
     return new Response(body, {
