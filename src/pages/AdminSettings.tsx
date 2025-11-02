@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, Check, AlertTriangle, Database } from "lucide-react";
+import { ArrowLeft, Copy, Check, AlertTriangle, Database, Settings, AlertCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -152,10 +152,17 @@ WHERE id = 1;`;
         </div>
       </div>
 
-      <Alert className="border-yellow-500/50 bg-yellow-500/10">
-        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-        <AlertDescription>
-          <strong>Atenção:</strong> As credenciais da API são sensíveis. Mantenha-as seguras e não compartilhe com terceiros.
+      <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+        <Check className="h-5 w-5 text-green-600" />
+        <AlertDescription className="text-green-900 dark:text-green-100">
+          <div className="space-y-2">
+            <p className="font-bold text-base">✅ Como fazer os jogos funcionarem:</p>
+            <ol className="list-decimal list-inside space-y-1 text-sm">
+              <li>Preencha os <strong>4 campos principais</strong> abaixo com os dados do seu MySQL</li>
+              <li>Clique em <strong>"Salvar Configurações"</strong></li>
+              <li>Pronto! Os jogos vão funcionar automaticamente 🎮</li>
+            </ol>
+          </div>
         </AlertDescription>
       </Alert>
 
@@ -262,72 +269,91 @@ WHERE id = 1;`;
               </AlertDescription>
             </Alert>
 
-            <div className="space-y-2">
-              <Label htmlFor="api-key">URL da API no VPS *</Label>
-              <Input
-                id="api-key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="https://seu-vps.com ou http://seu-ip:3000"
-              />
-              <p className="text-xs text-muted-foreground">
-                URL completa do servidor onde a API está rodando
-              </p>
+            <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-500 rounded-lg p-4 space-y-4">
+              <h3 className="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                🎯 4 Campos Principais (do seu MySQL)
+              </h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="api-key" className="text-base font-semibold">
+                  1️⃣ URL da API no VPS *
+                </Label>
+                <Input
+                  id="api-key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="http://204.216.174.232:888"
+                  className="text-base h-12"
+                />
+                <p className="text-sm text-muted-foreground">
+                  📌 URL do seu servidor VPS onde os jogos estão hospedados
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="operator-token" className="text-base font-semibold">
+                  2️⃣ Agent Token * (agentToken do MySQL)
+                </Label>
+                <Input
+                  id="operator-token"
+                  value={operatorToken}
+                  onChange={(e) => setOperatorToken(e.target.value)}
+                  placeholder="Copie o agentToken da tabela agents"
+                  className="text-base h-12 font-mono"
+                />
+                <p className="text-sm text-muted-foreground">
+                  📌 Mesmo valor do campo <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">agentToken</code> no MySQL
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="secret-key" className="text-base font-semibold">
+                  3️⃣ Secret Key * (secretKey do MySQL)
+                </Label>
+                <Input
+                  id="secret-key"
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value)}
+                  placeholder="Copie a secretKey da tabela agents"
+                  className="text-base h-12 font-mono"
+                />
+                <p className="text-sm text-muted-foreground">
+                  📌 Mesmo valor do campo <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">secretKey</code> no MySQL
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="provider-code" className="text-base font-semibold">
+                  4️⃣ Agent Code (agentCode do MySQL)
+                </Label>
+                <Input
+                  id="provider-code"
+                  value={providerCode}
+                  onChange={(e) => setProviderCode(e.target.value)}
+                  placeholder="VORTEX ou código que está no MySQL"
+                  className="text-base h-12"
+                />
+                <p className="text-sm text-muted-foreground">
+                  📌 Mesmo valor do campo <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">agentCode</code> no MySQL
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="operator-token">Agent Token *</Label>
-              <Input
-                id="operator-token"
-                type="password"
-                value={operatorToken}
-                onChange={(e) => setOperatorToken(e.target.value)}
-                placeholder="Digite o Agent Token"
-              />
-              <p className="text-xs text-muted-foreground">
-                Token configurado na tabela 'agents' do MySQL (campo agentToken)
-              </p>
-            </div>
+            <Alert className="bg-green-50 dark:bg-green-950/30">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-sm">
+                <strong>✅ Dica:</strong> Preencha os 4 campos acima com os mesmos valores do MySQL e clique em "Salvar". 
+                Depois, atualize o MySQL conforme mostrado no card azul no topo.
+              </AlertDescription>
+            </Alert>
 
-            <div className="space-y-2">
-              <Label htmlFor="secret-key">Secret Key *</Label>
-              <Input
-                id="secret-key"
-                type="password"
-                value={secretKey}
-                onChange={(e) => setSecretKey(e.target.value)}
-                placeholder="Digite a Secret Key"
-              />
-              <p className="text-xs text-muted-foreground">
-                Chave secreta configurada na tabela 'agents' do MySQL (campo secretKey)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="provider-code">Agent Code</Label>
-              <Input
-                id="provider-code"
-                value={providerCode}
-                onChange={(e) => setProviderCode(e.target.value)}
-                placeholder="VORTEX"
-              />
-              <p className="text-xs text-muted-foreground">
-                Código do agente na tabela 'agents' (campo agentCode)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="callback-url">Callback URL</Label>
-              <Input
-                id="callback-url"
-                value={callbackUrl}
-                onChange={(e) => setCallbackUrl(e.target.value)}
-                placeholder="https://seu-dominio.com/"
-              />
-              <p className="text-xs text-muted-foreground">
-                URL do callback configurada no MySQL (lembre da barra final)
-              </p>
-            </div>
+            <Button 
+              onClick={handleSaveSettings} 
+              className="w-full h-12 text-base font-bold"
+              size="lg"
+            >
+              💾 Salvar Configurações
+            </Button>
           </CardContent>
         </Card>
 
