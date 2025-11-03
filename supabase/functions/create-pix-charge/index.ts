@@ -57,8 +57,8 @@ serve(async (req) => {
         client: {
           name: profile.full_name || 'Cliente',
           email: profile.email,
-          phone: '(11) 99999-9999',
-          document: '000.000.000-00',
+          phone: '(79) 99999-9999',
+          document: '051.178.900-94',
         },
         callbackUrl: webhookUrl,
         trackProps: {
