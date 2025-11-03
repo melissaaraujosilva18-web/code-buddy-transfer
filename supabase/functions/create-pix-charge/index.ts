@@ -11,10 +11,10 @@ const corsHeaders = {
 // TROQUE ESTES DADOS POR QUALQUER CPF/TELEFONE VÁLIDO
 // O Oasyfy não aceita dados falsos como "000.000.000-00"
 // =================================================================
-const PLACEHOLDER_NAME = "Vortexbet Depósito";
-const PLACEHOLDER_EMAIL = "clientevortexbet@gmail.com";
-const PLACEHOLDER_PHONE = "71988046508"; // (Use um telefone válido, SÓ NÚMEROS)
-const PLACEHOLDER_DOCUMENT = "06323819570"; // (Use um CPF válido, SÓ NÚMEROS)
+const PLACEHOLDER_NAME = "Cliente Depósito";
+const PLACEHOLDER_EMAIL = "cliente@deposito.com";
+const PLACEHOLDER_PHONE = "11999999999"; // (Use um telefone válido, SÓ NÚMEROS)
+const PLACEHOLDER_DOCUMENT = "12345678900"; // (Use um CPF válido, SÓ NÚMEROS)
 // =================================================================
 
 
