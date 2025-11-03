@@ -125,12 +125,24 @@ export const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
     setIsLoading(true);
 
     try {
-      // Buscar saldo atual
+      // Buscar saldo atual e verificar se já usou o cupom
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('balance')
+        .select('balance, coupon_used')
         .eq('id', user.id)
         .single();
+
+      if (profileError) throw profileError;
+
+      if (profileData.coupon_used) {
+        toast({
+          title: "Cupom já utilizado",
+          description: "Você já usou este cupom anteriormente",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
 
       if (profileError) throw profileError;
 
@@ -138,10 +150,13 @@ export const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
       const bonusAmount = 30;
       const newBalance = currentBalance + bonusAmount;
 
-      // Atualizar saldo
+      // Atualizar saldo e marcar cupom como usado
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ balance: newBalance })
+        .update({ 
+          balance: newBalance,
+          coupon_used: true 
+        })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
