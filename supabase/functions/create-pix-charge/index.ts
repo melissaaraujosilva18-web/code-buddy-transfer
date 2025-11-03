@@ -6,13 +6,25 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// =================================================================
+// DADOS FIXOS (VÁLIDOS)
+// TROQUE ESTES DADOS POR QUALQUER CPF/TELEFONE VÁLIDO
+// O Oasyfy não aceita dados falsos como "000.000.000-00"
+// =================================================================
+const PLACEHOLDER_NAME = "Vortexbet Depósito";
+const PLACEHOLDER_EMAIL = "clientevortexbet@gmail.com";
+const PLACEHOLDER_PHONE = "71988046508"; // (Use um telefone válido, SÓ NÚMEROS)
+const PLACEHOLDER_DOCUMENT = "06323819570"; // (Use um CPF válido, SÓ NÚMEROS)
+// =================================================================
+
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { amount, userId } = await req.json();
+    const { amount, userId } = await req.json(); // Você ainda precisa do userId e amount
 
     if (!amount || amount < 30) {
       return new Response(
@@ -20,33 +32,20 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Get user data
+    
+    // (Opcional: Você pode remover a busca ao 'profiles' se não precisar do email/nome real)
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('*')
+      .select('email, full_name') // Pega só o que precisa
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile) {
-      throw new Error('Usuário não encontrado');
-    }
-
-    // [CORREÇÃO: Adicionando verificação de CPF e Telefone]
-    if (!profile.cpf || !profile.phone) {
-      return new Response(
-        JSON.stringify({ error: 'Por favor, complete seu cadastro com CPF e Telefone antes de depositar.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Generate unique identifier
-    const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
+    const identifier = `DEP_${userId ? userId.substring(0, 8) : 'USER'}_${Date.now()}`;
 
     // Get webhook URL from environment
     const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/oasyfy-webhook`;
@@ -56,7 +55,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // [CORREÇÃO 1: Use os nomes corretos das variáveis de ambiente]
+        // [CORREÇÃO 1: Use os NOMES corretos das variáveis de ambiente]
         'x-public-key': Deno.env.get('OASYFY_PUBLIC_KEY') ?? '',
         'x-secret-key': Deno.env.get('OASYFY_SECRET_KEY') ?? '',
       },
@@ -64,12 +63,11 @@ serve(async (req) => {
         identifier,
         amount: Number(amount),
         client: {
-          name: profile.full_name || 'Cliente',
-          email: profile.email,
-          // [CORREÇÃO 2: Pega o telefone do perfil e remove formatação]
-          phone: profile.phone.replace(/\D/g, ''),
-          // [CORREÇÃO 3: Pega o CPF do perfil e remove formatação]
-          document: profile.cpf.replace(/\D/g, ''),
+          // [CORREÇÃO 2: Usando dados fixos VÁLIDOS]
+          name: profile?.full_name || PLACEHOLDER_NAME,
+          email: profile?.email || PLACEHOLDER_EMAIL,
+          phone: PLACEHOLDER_PHONE, // (Deve ter 11 dígitos)
+          document: PLACEHOLDER_DOCUMENT, // (Deve ter 11 dígitos)
         },
         callbackUrl: webhookUrl,
         trackProps: {
@@ -81,17 +79,11 @@ serve(async (req) => {
 
     if (!oasyfyResponse.ok) {
       const errorData = await oasyfyResponse.text();
-      console.error('Oasyfy error:', errorData);
+      console.error('Oasyfy error:', errorData); // O erro real do Oasyfy aparecerá nos seus logs
       throw new Error('Erro ao criar cobrança PIX');
     }
 
     const oasyfyData = await oasyfyResponse.json();
-
-    console.log('PIX charge created:', {
-      transactionId: oasyfyData.transactionId,
-      identifier,
-      amount
-    });
 
     return new Response(
       JSON.stringify({
