@@ -48,8 +48,8 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-public-key': Deno.env.get('OASYFY_PUBLIC_KEY') ?? '',
-        'x-secret-key': Deno.env.get('OASYFY_SECRET_KEY') ?? '',
+        'x-public-key': Deno.env.get('marcosviniciuslkk_m61w150ycoyd7ioq') ?? '',
+        'x-secret-key': Deno.env.get('vspmkfohm1j2hey9pyz9gxguq3vdpqdz0s2r9mfv1751tjlcu62hac0qkf7vp7bp') ?? '',
       },
       body: JSON.stringify({
         identifier,
