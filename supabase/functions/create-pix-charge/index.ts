@@ -42,23 +42,33 @@ serve(async (req) => {
       });
     }
 
-    // 2. [CORREÇÃO] Validar campos obrigatórios (sem "phone")
-    if (!profile.cpf || !profile.full_name || !profile.email) {
+    // --- Início das Mudanças Críticas ---
+
+    // 2. [NOVA CORREÇÃO] Garantir que o CPF é uma string e limpar
+    let cleanedCpf = null;
+    if (profile.cpf) {
+      // Converte para string (caso seja número) e remove caracteres não-dígitos
+      cleanedCpf = String(profile.cpf).replace(/\D/g, "");
+    }
+
+    // 3. Validar se os campos obrigatórios estão preenchidos e válidos
+    if (!cleanedCpf || cleanedCpf.length < 11 || !profile.full_name || !profile.email) {
       return new Response(
         JSON.stringify({
-          error: "Dados incompletos. Por favor, complete seu cadastro (Nome, Email e CPF) antes de depositar.",
+          error:
+            "Dados incompletos. Por favor, complete seu cadastro (Nome, Email e CPF) antes de depositar. Verifique se o CPF tem 11 dígitos.",
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // 3. Generate unique identifier
+    // 4. Generate unique identifier
     const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
 
-    // 4. Get webhook URL from environment
+    // 5. Get webhook URL from environment
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oasyfy-webhook`;
 
-    // 5. Call Oasyfy API to create PIX charge
+    // 6. Call Oasyfy API to create PIX charge
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
       method: "POST",
       headers: {
@@ -72,8 +82,7 @@ serve(async (req) => {
         client: {
           name: profile.full_name,
           email: profile.email,
-          // [CORREÇÃO] Removido "phone" pois ele não existe
-          document: profile.cpf.replace(/\D/g, ""), // Limpa para enviar só números
+          document: cleanedCpf, // Usa o CPF limpo e validado
         },
         callbackUrl: webhookUrl,
         trackProps: {
@@ -98,7 +107,6 @@ serve(async (req) => {
       console.error("Oasyfy API error:", errorData);
 
       // Constrói uma mensagem de erro amigável
-      // [CORREÇÃO] A Oasyfy envia "message" e não "errors[0].message" para este erro
       const errorMessage = errorData.message || "Erro desconhecido na API de pagamento.";
 
       // Retorna o erro real da Oasyfy para o front-end
