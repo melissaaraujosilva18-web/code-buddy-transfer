@@ -6,24 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// =================================================================
-// DADOS FIXOS (VÁLIDOS)
-// TROQUE ESTES DADOS POR QUALQUER CPF/TELEFONE VÁLIDO
-// O Oasyfy não aceita dados falsos como "000.000.000-00"
-// =================================================================
-const PLACEHOLDER_NAME = "Marcos Vinicius dos Santos";
-const PLACEHOLDER_EMAIL = "tativitoria2017@gmail.com";
-const PLACEHOLDER_PHONE = "11921332812"; // (Use um telefone válido, SÓ NÚMEROS)
-const PLACEHOLDER_DOCUMENT = "06852767590"; // (Use um CPF válido, SÓ NÚMEROS)
-// =================================================================
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { amount, userId } = await req.json(); // Você ainda precisa do userId e amount
+    const { amount, userId } = await req.json();
 
     if (!amount || amount < 30) {
       return new Response(JSON.stringify({ error: "Valor mínimo de R$ 30,00" }), {
@@ -32,29 +21,45 @@ serve(async (req) => {
       });
     }
 
-    // (Opcional: Você pode remover a busca ao 'profiles' se não precisar do email/nome real)
+    // 1. Get user data
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
+
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("email, full_name") // Pega só o que precisa
+      .select("*") // Pega tudo do perfil (cpf, phone, full_name)
       .eq("id", userId)
       .single();
 
-    // Generate unique identifier
-    const identifier = `DEP_${userId ? userId.substring(0, 8) : "USER"}_${Date.now()}`;
+    if (profileError || !profile) {
+      throw new Error("Usuário não encontrado");
+    }
 
-    // Get webhook URL from environment
+    // 2. [CORREÇÃO CRÍTICA]
+    // Verificar se o usuário TEM CPF e Telefone cadastrados no banco
+    if (!profile.cpf || !profile.phone || !profile.full_name) {
+      return new Response(
+        JSON.stringify({
+          error: "Dados incompletos. Por favor, complete seu cadastro (Nome, CPF e Telefone) antes de depositar.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // 3. Generate unique identifier
+    const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
+
+    // 4. Get webhook URL from environment
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oasyfy-webhook`;
 
-    // Call Oasyfy API to create PIX charge
+    // 5. Call Oasyfy API to create PIX charge
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // [CORREÇÃO 1: Use os NOMES corretos das variáveis de ambiente]
+        // [CORREÇÃO 1: Usando os NOMES corretos das Secrets do Supabase]
         "x-public-key": Deno.env.get("OASYFY_PUBLIC_KEY") ?? "",
         "x-secret-key": Deno.env.get("OASYFY_SECRET_KEY") ?? "",
       },
@@ -62,11 +67,12 @@ serve(async (req) => {
         identifier,
         amount: Number(amount),
         client: {
-          // [CORREÇÃO 2: Usando dados fixos VÁLIDOS]
-          name: profile?.full_name || PLACEHOLDER_NAME,
-          email: profile?.email || PLACEHOLDER_EMAIL,
-          phone: PLACEHOLDER_PHONE, // (Deve ter 11 dígitos)
-          document: PLACEHOLDER_DOCUMENT, // (Deve ter 11 dígitos)
+          // [CORREÇÃO 2: Usando dados DINÂMICOS do perfil]
+          name: profile.full_name,
+          email: profile.email,
+          // [CORREÇÃO 3: Enviando SÓ NÚMEROS (Formatação)]
+          phone: profile.phone.replace(/\D/g, ""),
+          document: profile.cpf.replace(/\D/g, ""),
         },
         callbackUrl: webhookUrl,
         trackProps: {
@@ -78,7 +84,9 @@ serve(async (req) => {
 
     if (!oasyfyResponse.ok) {
       const errorData = await oasyfyResponse.text();
-      console.error("Oasyfy error:", errorData); // O erro real do Oasyfy aparecerá nos seus logs
+      // O ERRO REAL ESTARÁ AQUI NOS LOGS DO SUPABASE:
+      console.error("Oasyfy error:", errorData);
+      // Se 'errorData' ainda for "Documento inválido", o Oasyfy está rejeitando a combinação Nome/CPF.
       throw new Error("Erro ao criar cobrança PIX");
     }
 
