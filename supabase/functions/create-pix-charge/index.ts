@@ -29,7 +29,8 @@ serve(async (req) => {
 
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("full_name, email, phone, cpf") // Pega campos específicos
+      // [CORREÇÃO] Removido "phone" pois ele não existe na sua tabela
+      .select("full_name, email, cpf")
       .eq("id", userId)
       .single();
 
@@ -41,12 +42,11 @@ serve(async (req) => {
       });
     }
 
-    // 2. [MELHORIA 1] Validar TODOS os campos obrigatórios
-    if (!profile.cpf || !profile.phone || !profile.full_name || !profile.email) {
+    // 2. [CORREÇÃO] Validar campos obrigatórios (sem "phone")
+    if (!profile.cpf || !profile.full_name || !profile.email) {
       return new Response(
         JSON.stringify({
-          error:
-            "Dados incompletos. Por favor, complete seu cadastro (Nome, Email, CPF e Telefone) antes de depositar.",
+          error: "Dados incompletos. Por favor, complete seu cadastro (Nome, Email e CPF) antes de depositar.",
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -72,7 +72,7 @@ serve(async (req) => {
         client: {
           name: profile.full_name,
           email: profile.email,
-          phone: profile.phone.replace(/\D/g, ""), // Limpa para enviar só números
+          // [CORREÇÃO] Removido "phone" pois ele não existe
           document: profile.cpf.replace(/\D/g, ""), // Limpa para enviar só números
         },
         callbackUrl: webhookUrl,
@@ -98,9 +98,8 @@ serve(async (req) => {
       console.error("Oasyfy API error:", errorData);
 
       // Constrói uma mensagem de erro amigável
-      const errorMessage = errorData.errors
-        ? `Erro de validação: ${errorData.errors[0].message}` // Pega a primeira mensagem de erro
-        : errorData.message || "Erro desconhecido na API de pagamento.";
+      // [CORREÇÃO] A Oasyfy envia "message" e não "errors[0].message" para este erro
+      const errorMessage = errorData.message || "Erro desconhecido na API de pagamento.";
 
       // Retorna o erro real da Oasyfy para o front-end
       return new Response(JSON.stringify({ error: errorMessage }), {
