@@ -19,6 +19,7 @@ interface DepositModalProps {
 export const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
   const { user, refreshProfile } = useAuth();
   const [amount, setAmount] = useState('');
+  const [couponCode, setCouponCode] = useState('');
   const [showQRCode, setShowQRCode] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -102,6 +103,85 @@ export const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
     setAmount(value.toString());
   };
 
+  const handleApplyCoupon = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar autenticado",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (couponCode.toUpperCase() !== 'VORTEX30') {
+      toast({
+        title: "Cupom inválido",
+        description: "O cupom digitado não existe",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Buscar saldo atual
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const currentBalance = profileData.balance || 0;
+      const bonusAmount = 30;
+      const newBalance = currentBalance + bonusAmount;
+
+      // Atualizar saldo
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Criar registro de transação
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: 'bonus',
+          amount: bonusAmount,
+          balance_before: currentBalance,
+          balance_after: newBalance,
+          description: 'Bônus cupom VORTEX30',
+          metadata: { coupon_code: 'VORTEX30' }
+        });
+
+      if (transactionError) throw transactionError;
+
+      toast({
+        title: "Cupom aplicado!",
+        description: `R$ ${bonusAmount.toFixed(2)} adicionados ao seu saldo`,
+      });
+
+      setCouponCode('');
+      refreshProfile();
+      handleCloseAll();
+
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      toast({
+        title: "Erro ao aplicar cupom",
+        description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleDeposit = async () => {
     if (!amount || parseFloat(amount) < 30) {
       toast({
@@ -176,6 +256,7 @@ export const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
     setShowQRCode(false);
     setShowSuccess(false);
     setAmount('');
+    setCouponCode('');
     setQrCodeData(null);
     setQrDataUrl('');
     onClose();
@@ -184,6 +265,7 @@ export const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
   const handleSuccessClose = () => {
     setShowSuccess(false);
     setAmount('');
+    setCouponCode('');
     setQrCodeData(null);
     setQrDataUrl('');
     onClose();
@@ -220,6 +302,27 @@ export const DepositModal = ({ isOpen, onClose }: DepositModalProps) => {
                   onChange={e => setAmount(e.target.value)}
                   className="pl-12 h-12 bg-secondary border-border text-lg"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Tem um cupom?</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Digite o cupom"
+                    value={couponCode}
+                    onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                    className="h-12 bg-secondary border-border"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={!couponCode || isLoading}
+                    className="h-12 px-6"
+                  >
+                    Aplicar
+                  </Button>
+                </div>
               </div>
 
               <div className="flex gap-3">
