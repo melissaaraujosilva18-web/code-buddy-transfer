@@ -21,15 +21,23 @@ serve(async (req) => {
       });
     }
 
-    // 1. Get user data
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "userId é obrigatório" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Instancia o Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
+    // Busca o perfil do usuário
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("*") // Pega tudo do perfil (cpf, phone, full_name)
+      .select("*")
       .eq("id", userId)
       .single();
 
@@ -37,57 +45,39 @@ serve(async (req) => {
       throw new Error("Usuário não encontrado");
     }
 
-    // 2. [CORREÇÃO CRÍTICA]
-    // Verificar se o usuário TEM CPF e Telefone cadastrados no banco
-    if (!profile.cpf || !profile.phone || !profile.full_name) {
-      return new Response(
-        JSON.stringify({
-          error: "Dados incompletos. Por favor, complete seu cadastro (Nome, CPF e Telefone) antes de depositar.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    // 3. Generate unique identifier
     const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
-
-    // 4. Get webhook URL from environment
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oasyfy-webhook`;
 
-    // 5. Call Oasyfy API to create PIX charge
+    // Faz a requisição para criar cobrança PIX
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // [CORREÇÃO 1: Usando os NOMES corretos das Secrets do Supabase]
         "x-public-key": Deno.env.get("OASYFY_PUBLIC_KEY") ?? "",
         "x-secret-key": Deno.env.get("OASYFY_SECRET_KEY") ?? "",
       },
       body: JSON.stringify({
         identifier,
-        amount: Number(amount),
+        amount: Number(amount.toFixed(2)),
         client: {
-          // [CORREÇÃO 2: Usando dados DINÂMICOS do perfil]
-          name: profile.full_name,
+          name: profile.full_name || "Cliente",
           email: profile.email,
-          // [CORREÇÃO 3: Enviando SÓ NÚMEROS (Formatação)]
-          phone: profile.phone.replace(/\D/g, ""),
-          document: profile.cpf.replace(/\D/g, ""),
+          phone: profile.phone || "(11) 99999-9999",
+          document: profile.cpf ? profile.cpf.replace(/[^\d]/g, "") : "00000000000",
         },
         callbackUrl: webhookUrl,
         trackProps: {
-          userId: userId,
+          userId,
+          type: "deposit",
           depositAmount: amount,
         },
       }),
     });
 
     if (!oasyfyResponse.ok) {
-      const errorData = await oasyfyResponse.text();
-      // O ERRO REAL ESTARÁ AQUI NOS LOGS DO SUPABASE:
-      console.error("Oasyfy error:", errorData);
-      // Se 'errorData' ainda for "Documento inválido", o Oasyfy está rejeitando a combinação Nome/CPF.
-      throw new Error("Erro ao criar cobrança PIX");
+      const errorText = await oasyfyResponse.text();
+      console.error("Erro Oasyfy (Depósito):", errorText);
+      throw new Error(`Erro ao criar cobrança PIX: ${errorText}`);
     }
 
     const oasyfyData = await oasyfyResponse.json();
@@ -97,20 +87,16 @@ serve(async (req) => {
         success: true,
         transactionId: oasyfyData.transactionId,
         identifier,
-        qrCode: oasyfyData.pix.code,
-        qrCodeBase64: oasyfyData.pix.base64,
-        qrCodeImage: oasyfyData.pix.image,
+        qrCode: oasyfyData.pix?.code,
+        qrCodeBase64: oasyfyData.pix?.base64,
+        qrCodeImage: oasyfyData.pix?.image,
         amount,
       }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
-    console.error("Error in create-pix-charge:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error("Erro em create-pix-charge:", error);
+    return new Response(JSON.stringify({ error: error.message || "Erro desconhecido" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
