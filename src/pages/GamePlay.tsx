@@ -18,7 +18,6 @@ export default function GamePlay() {
   useEffect(() => {
     const loadGame = async () => {
       if (!user || !gameCode) {
-        toast.error("Usuário não autenticado");
         return;
       }
 

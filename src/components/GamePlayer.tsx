@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import vortexLogo from "@/assets/vortexbet-logo.png";
 
 interface GamePlayerProps {
@@ -11,6 +12,7 @@ interface GamePlayerProps {
 
 export default function GamePlayer({ gameUrl, gameName }: GamePlayerProps) {
   const navigate = useNavigate();
+  const { refreshProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [blocked, setBlocked] = useState(false);
@@ -27,6 +29,21 @@ export default function GamePlayer({ gameUrl, gameName }: GamePlayerProps) {
 
     return () => clearTimeout(fallbackTimer);
   }, [iframeLoaded]);
+
+  // Atualizar saldo quando o usuário retorna à página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshProfile();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshProfile]);
 
   return (
     <div className="fixed inset-0 bg-black">

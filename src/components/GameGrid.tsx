@@ -12,6 +12,7 @@ import bikiniParadise from "@/assets/games/bikini-paradise.jpg";
 import fortuneRabbit from "@/assets/games/fortune-rabbit.jpg";
 import fortuneOx from "@/assets/games/fortune-ox.jpg";
 import fortuneMouse from "@/assets/games/fortune-mouse.jpg";
+import fortuneDragon from "@/assets/games/fortune-dragon.jpg";
 
 interface Game {
   id: number;
@@ -26,7 +27,7 @@ const pgSoftGames: Game[] = [
   { id: 1, title: "Fortune Tiger", image: fortuneTiger, provider: "PG Soft", gameCode: "fortune-tiger", hot: true },
   { id: 2, title: "Fortune Ox", image: fortuneOx, provider: "PG Soft", gameCode: "fortune-ox", hot: true },
   { id: 3, title: "Fortune Mouse", image: fortuneMouse, provider: "PG Soft", gameCode: "fortune-mouse", hot: true },
-  { id: 4, title: "Fortune Dragon", image: fortuneMouse, provider: "PG Soft", gameCode: "fortune-dragon", hot: true },
+  { id: 4, title: "Fortune Dragon", image: fortuneDragon, provider: "PG Soft", gameCode: "fortune-dragon", hot: true },
   { id: 5, title: "Fortune Rabbit", image: fortuneRabbit, provider: "PG Soft", gameCode: "fortune-rabbit", hot: true },
   { id: 6, title: "Bikini Paradise", image: bikiniParadise, provider: "PG Soft", gameCode: "bikini-paradise" },
   { id: 7, title: "Double Fortune", image: doubleFortune, provider: "PG Soft", gameCode: "double-fortune", hot: true },
