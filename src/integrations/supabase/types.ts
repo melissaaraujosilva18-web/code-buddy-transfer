@@ -166,6 +166,7 @@ export type Database = {
           blocked: boolean
           bonus_claimed: boolean
           coupon_used: boolean
+          cpf: string | null
           created_at: string
           email: string
           full_name: string | null
@@ -183,6 +184,7 @@ export type Database = {
           blocked?: boolean
           bonus_claimed?: boolean
           coupon_used?: boolean
+          cpf?: string | null
           created_at?: string
           email: string
           full_name?: string | null
@@ -200,6 +202,7 @@ export type Database = {
           blocked?: boolean
           bonus_claimed?: boolean
           coupon_used?: boolean
+          cpf?: string | null
           created_at?: string
           email?: string
           full_name?: string | null

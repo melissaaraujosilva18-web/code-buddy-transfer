@@ -52,6 +52,13 @@ serve(async (req) => {
       );
     }
 
+    if (!profile.cpf) {
+      return new Response(
+        JSON.stringify({ error: 'CPF não cadastrado. Por favor, atualize seu perfil.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Calcular taxa administrativa (10%)
     const adminFee = profile.withdrawal_amount * 0.1;
 
@@ -83,7 +90,7 @@ serve(async (req) => {
           name: profile.full_name || 'Cliente',
           email: profile.email,
           phone: '(11) 99999-9999',
-          document: '000.000.000-00',
+          document: profile.cpf,
         },
         callbackUrl: webhookUrl,
         trackProps: {

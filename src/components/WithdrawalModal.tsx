@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { QRCodeSVG } from "qrcode.react";
+import { formatCPF, validateCPF } from "@/utils/cpfValidation";
 
 interface WithdrawalModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
   const [pixKeyType, setPixKeyType] = useState<'cpf' | 'email' | 'phone' | 'random'>(profile?.pix_key_type || 'cpf');
   const [pixName, setPixName] = useState(profile?.pix_name || "");
   const [pixKey, setPixKey] = useState(profile?.pix_key || "");
+  const [cpf, setCpf] = useState((profile as any)?.cpf || "");
   const [amount, setAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEditingPix, setIsEditingPix] = useState(false);
@@ -94,6 +96,7 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
       setPixKeyType(profile.pix_key_type || 'cpf');
       setPixName(profile.pix_name || "");
       setPixKey(profile.pix_key || "");
+      setCpf((profile as any).cpf || "");
     }
   }, [profile]);
 
@@ -145,10 +148,19 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
   }, [needsToPayFee, user, isOpen]);
 
   const handleUpdatePixKey = async () => {
-    if (!pixKey || !pixName || !pixKeyType || !user) {
+    if (!pixKey || !pixName || !pixKeyType || !cpf || !user) {
       toast({
         title: "Dados incompletos",
-        description: "Por favor, preencha todos os campos da chave PIX",
+        description: "Por favor, preencha todos os campos incluindo o CPF",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validateCPF(cpf)) {
+      toast({
+        title: "CPF inválido",
+        description: "Por favor, digite um CPF válido",
         variant: "destructive",
       });
       return;
@@ -160,7 +172,8 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
         .update({
           pix_key: pixKey,
           pix_key_type: pixKeyType,
-          pix_name: pixName
+          pix_name: pixName,
+          cpf: cpf
         })
         .eq("id", user.id);
 
@@ -169,14 +182,14 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
       await refreshProfile();
       setIsEditingPix(false);
       toast({
-        title: "Chave PIX atualizada!",
-        description: "Sua chave PIX foi atualizada com sucesso",
+        title: "Dados atualizados!",
+        description: "Seus dados foram atualizados com sucesso",
       });
     } catch (error) {
       console.error("Error updating PIX key:", error);
       toast({
         title: "Erro ao atualizar",
-        description: "Não foi possível atualizar sua chave PIX",
+        description: "Não foi possível atualizar seus dados",
         variant: "destructive",
       });
     }
@@ -202,11 +215,20 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
       return;
     }
 
-    // Validar dados da chave PIX
-    if (!pixKey || !pixName || !pixKeyType) {
+    // Validar dados da chave PIX e CPF
+    if (!pixKey || !pixName || !pixKeyType || !cpf) {
       toast({
         title: "Dados incompletos",
-        description: "Por favor, preencha todos os campos da chave PIX",
+        description: "Por favor, preencha todos os campos incluindo o CPF",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validateCPF(cpf)) {
+      toast({
+        title: "CPF inválido",
+        description: "Por favor, digite um CPF válido",
         variant: "destructive",
       });
       return;
@@ -218,13 +240,14 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
       const withdrawalAmount = parseFloat(amount);
       const newBalance = (profile?.balance || 0) - withdrawalAmount;
 
-      // Salvar/atualizar chave PIX, solicitar saque e descontar saldo
+      // Salvar/atualizar chave PIX, CPF, solicitar saque e descontar saldo
       const { error } = await supabase
         .from("profiles")
         .update({
           pix_key: pixKey,
           pix_key_type: pixKeyType,
           pix_name: pixName,
+          cpf: cpf,
           withdrawal_status: "awaiting_fee",
           withdrawal_amount: withdrawalAmount,
           balance: newBalance,
@@ -351,6 +374,17 @@ export const WithdrawalModal = ({ isOpen, onClose }: WithdrawalModalProps) => {
     <div className="space-y-4">
       {showPixFields && (
         <>
+          <div className="space-y-2">
+            <Label>CPF</Label>
+            <Input
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={(e) => setCpf(formatCPF(e.target.value))}
+              className="h-12"
+              maxLength={14}
+            />
+          </div>
+
           <div className="space-y-2">
             <Label>Tipo de Chave PIX</Label>
             <Select value={pixKeyType} onValueChange={(value: any) => setPixKeyType(value)}>
