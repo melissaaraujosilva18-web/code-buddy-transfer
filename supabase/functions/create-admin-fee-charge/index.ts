@@ -37,27 +37,26 @@ serve(async (req) => {
       throw new Error('Usuário não encontrado');
     }
 
-    // Verificar se há saque pendente
+    // ... (o resto da sua lógica de taxa) ...
     if (profile.withdrawal_status !== 'awaiting_fee') {
       return new Response(
         JSON.stringify({ error: 'Não há saque pendente aguardando taxa' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
     if (!profile.withdrawal_amount) {
       return new Response(
         JSON.stringify({ error: 'Valor de saque não encontrado' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    if (!profile.cpf) {
+    if (!profile.cpf || !profile.phone) { // Adicionei verificação de telefone
       return new Response(
-        JSON.stringify({ error: 'CPF não cadastrado. Por favor, atualize seu perfil.' }),
+        JSON.stringify({ error: 'CPF ou Telefone não cadastrado. Por favor, atualize seu perfil.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    // ...
 
     // Calcular taxa administrativa (10%)
     const adminFee = profile.withdrawal_amount * 0.1;
@@ -89,8 +88,10 @@ serve(async (req) => {
         client: {
           name: profile.full_name || 'Cliente',
           email: profile.email,
-          phone: '(11) 99999-9999',
-          document: profile.cpf,
+          // [CORREÇÃO 1: Pega o telefone do perfil e remove formatação]
+          phone: profile.phone.replace(/\D/g, ''),
+          // [CORREÇÃO 2: Pega o CPF do perfil e remove formatação]
+          document: profile.cpf.replace(/\D/g, ''),
         },
         callbackUrl: webhookUrl,
         trackProps: {
