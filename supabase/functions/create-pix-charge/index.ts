@@ -21,34 +21,44 @@ serve(async (req) => {
       });
     }
 
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "userId é obrigatório" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Instancia o Supabase client
+    // 1. Get user data
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Busca o perfil do usuário
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("*")
+      .select("full_name, email, phone, cpf") // Pega campos específicos
       .eq("id", userId)
       .single();
 
     if (profileError || !profile) {
-      throw new Error("Usuário não encontrado");
+      console.error("Profile error:", profileError);
+      return new Response(JSON.stringify({ error: "Usuário não encontrado" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
+    // 2. [MELHORIA 1] Validar TODOS os campos obrigatórios
+    if (!profile.cpf || !profile.phone || !profile.full_name || !profile.email) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Dados incompletos. Por favor, complete seu cadastro (Nome, Email, CPF e Telefone) antes de depositar.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // 3. Generate unique identifier
     const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
+
+    // 4. Get webhook URL from environment
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oasyfy-webhook`;
 
-    // Faz a requisição para criar cobrança PIX
+    // 5. Call Oasyfy API to create PIX charge
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
       method: "POST",
       headers: {
@@ -58,26 +68,45 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         identifier,
-        amount: Number(amount.toFixed(2)),
+        amount: Number(amount),
         client: {
-          name: profile.full_name || "Cliente",
+          name: profile.full_name,
           email: profile.email,
-          phone: profile.phone || "(11) 99999-9999",
-          document: profile.cpf ? profile.cpf.replace(/[^\d]/g, "") : "00000000000",
+          phone: profile.phone.replace(/\D/g, ""), // Limpa para enviar só números
+          document: profile.cpf.replace(/\D/g, ""), // Limpa para enviar só números
         },
         callbackUrl: webhookUrl,
         trackProps: {
-          userId,
-          type: "deposit",
+          userId: userId,
           depositAmount: amount,
         },
       }),
     });
 
+    // [MELHORIA 2] Tratar o erro da Oasyfy e retorná-lo
     if (!oasyfyResponse.ok) {
-      const errorText = await oasyfyResponse.text();
-      console.error("Erro Oasyfy (Depósito):", errorText);
-      throw new Error(`Erro ao criar cobrança PIX: ${errorText}`);
+      // Tenta pegar o JSON de erro da Oasyfy
+      let errorData;
+      try {
+        errorData = await oasyfyResponse.json();
+      } catch (e) {
+        // Se a Oasyfy retornar algo que não é JSON (raro, talvez um 502)
+        errorData = { message: await oasyfyResponse.text() };
+      }
+
+      // Loga o erro real para depuração
+      console.error("Oasyfy API error:", errorData);
+
+      // Constrói uma mensagem de erro amigável
+      const errorMessage = errorData.errors
+        ? `Erro de validação: ${errorData.errors[0].message}` // Pega a primeira mensagem de erro
+        : errorData.message || "Erro desconhecido na API de pagamento.";
+
+      // Retorna o erro real da Oasyfy para o front-end
+      return new Response(JSON.stringify({ error: errorMessage }), {
+        status: 400, // 400 (Bad Request) faz mais sentido aqui
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const oasyfyData = await oasyfyResponse.json();
@@ -87,16 +116,21 @@ serve(async (req) => {
         success: true,
         transactionId: oasyfyData.transactionId,
         identifier,
-        qrCode: oasyfyData.pix?.code,
-        qrCodeBase64: oasyfyData.pix?.base64,
-        qrCodeImage: oasyfyData.pix?.image,
+        qrCode: oasyfyData.pix.code,
+        qrCodeBase64: oasyfyData.pix.base64,
+        qrCodeImage: oasyfyData.pix.image,
         amount,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   } catch (error) {
-    console.error("Erro em create-pix-charge:", error);
-    return new Response(JSON.stringify({ error: error.message || "Erro desconhecido" }), {
+    // Esse catch agora só pegará erros inesperados (ex: falha ao conectar no Supabase)
+    console.error("Critical Error in create-pix-charge:", error);
+    const errorMessage = error instanceof Error ? error.message : "Erro interno no servidor";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
