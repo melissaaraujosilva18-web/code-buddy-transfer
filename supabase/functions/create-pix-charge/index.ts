@@ -61,18 +61,22 @@ serve(async (req) => {
       );
     }
 
+    // Formatar o CPF para o padrão XXX.XXX.XXX-XX conforme documentação da Oasyfy
+    const formattedCpf = cleanedCpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+
     // 6. Geração de Identificador e Webhook URL (mantida)
     const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oasyfy-webhook`;
 
-    // 7. Payload da Oasyfy - Tentando CPF sem formatação (apenas números)
+    // 7. Payload da Oasyfy - Seguindo formato da documentação oficial
     const payload = {
       identifier,
       amount: Number(amount),
       client: {
         name: profile.full_name,
         email: profile.email,
-        document: cleanedCpf, // <<< ENVIANDO CPF SEM FORMATAÇÃO (apenas números)
+        phone: "", // Telefone vazio conforme permitido pela API
+        document: formattedCpf, // CPF formatado: XXX.XXX.XXX-XX
       },
       callbackUrl: webhookUrl,
       trackProps: {
@@ -80,8 +84,6 @@ serve(async (req) => {
         depositAmount: amount,
       },
     };
-
-    console.log("Enviando para Oasyfy:", { ...payload, client: { ...payload.client, document: cleanedCpf.substring(0, 3) + "****" } });
 
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
       method: "POST",
