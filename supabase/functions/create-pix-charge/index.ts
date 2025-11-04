@@ -105,9 +105,16 @@ serve(async (req) => {
 
       console.error("Oasyfy API error:", errorData);
 
-      const errorMessage = errorData.message || "Erro desconhecido na API de pagamento.";
+      // Mensagens de erro mais específicas para o usuário
+      let userMessage = "Erro ao processar pagamento.";
+      
+      if (errorData.message && errorData.message.includes("Documento inválido")) {
+        userMessage = "CPF inválido. Por favor, verifique seu CPF no perfil e tente novamente. O CPF precisa ser um número válido e real.";
+      } else if (errorData.message) {
+        userMessage = errorData.message;
+      }
 
-      return new Response(JSON.stringify({ error: errorMessage }), {
+      return new Response(JSON.stringify({ error: userMessage }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
