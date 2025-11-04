@@ -118,7 +118,8 @@ const Auth = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: validation.fullName
+            full_name: validation.fullName,
+            cpf: validation.cpf
           }
         }
       });
