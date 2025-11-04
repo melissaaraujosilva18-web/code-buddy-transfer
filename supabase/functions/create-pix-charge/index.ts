@@ -14,6 +14,7 @@ serve(async (req) => {
   try {
     const { amount, userId } = await req.json();
 
+    // 1. Validação inicial do valor (mantida)
     if (!amount || amount < 30) {
       return new Response(JSON.stringify({ error: "Valor mínimo de R$ 30,00" }), {
         status: 400,
@@ -21,15 +22,15 @@ serve(async (req) => {
       });
     }
 
-    // 1. Get user data
+    // 2. Conexão com Supabase (mantida)
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
+    // 3. Busca de dados do perfil (mantida)
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      // [CORREÇÃO] Removido "phone" pois ele não existe na sua tabela
       .select("full_name, email, cpf")
       .eq("id", userId)
       .single();
@@ -42,17 +43,15 @@ serve(async (req) => {
       });
     }
 
-    // --- Início das Mudanças Críticas ---
-
-    // 2. [NOVA CORREÇÃO] Garantir que o CPF é uma string e limpar
+    // 4. Limpeza e Formatação do CPF (A CORREÇÃO PRINCIPAL)
     let cleanedCpf = null;
     if (profile.cpf) {
-      // Converte para string (caso seja número) e remove caracteres não-dígitos
+      // Converte para string e remove caracteres não-dígitos
       cleanedCpf = String(profile.cpf).replace(/\D/g, "");
     }
 
-    // 3. Validar se os campos obrigatórios estão preenchidos e válidos
-    if (!cleanedCpf || cleanedCpf.length < 11 || !profile.full_name || !profile.email) {
+    // 5. Validação de dados (mantida)
+    if (!cleanedCpf || cleanedCpf.length !== 11 || !profile.full_name || !profile.email) {
       return new Response(
         JSON.stringify({
           error:
@@ -62,13 +61,16 @@ serve(async (req) => {
       );
     }
 
-    // 4. Generate unique identifier
-    const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
+    // >>> CORREÇÃO: FORMATAR O CPF PARA O PADRÃO XXX.XXX.XXX-XX <<<
+    // O exemplo da Oasyfy usa este formato: "document": "123.456.789-00"
+    const formattedCpf = cleanedCpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+    // Ex: "06852767590" vira "068.527.675-90"
 
-    // 5. Get webhook URL from environment
+    // 6. Geração de Identificador e Webhook URL (mantida)
+    const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oasyfy-webhook`;
 
-    // 6. Call Oasyfy API to create PIX charge
+    // 7. Payload da Oasyfy (USANDO O CPF FORMATADO)
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
       method: "POST",
       headers: {
@@ -82,7 +84,7 @@ serve(async (req) => {
         client: {
           name: profile.full_name,
           email: profile.email,
-          document: cleanedCpf, // Usa o CPF limpo e validado
+          document: formattedCpf, // <<< AQUI USAMOS O CPF FORMATADO
         },
         callbackUrl: webhookUrl,
         trackProps: {
@@ -92,30 +94,26 @@ serve(async (req) => {
       }),
     });
 
-    // [MELHORIA 2] Tratar o erro da Oasyfy e retorná-lo
+    // 8. Tratamento de Erro e Log da Oasyfy (mantida)
     if (!oasyfyResponse.ok) {
-      // Tenta pegar o JSON de erro da Oasyfy
       let errorData;
       try {
         errorData = await oasyfyResponse.json();
       } catch (e) {
-        // Se a Oasyfy retornar algo que não é JSON (raro, talvez um 502)
         errorData = { message: await oasyfyResponse.text() };
       }
 
-      // Loga o erro real para depuração
       console.error("Oasyfy API error:", errorData);
 
-      // Constrói uma mensagem de erro amigável
       const errorMessage = errorData.message || "Erro desconhecido na API de pagamento.";
 
-      // Retorna o erro real da Oasyfy para o front-end
       return new Response(JSON.stringify({ error: errorMessage }), {
-        status: 400, // 400 (Bad Request) faz mais sentido aqui
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // 9. Retorno de Sucesso (mantida)
     const oasyfyData = await oasyfyResponse.json();
 
     return new Response(
@@ -134,7 +132,7 @@ serve(async (req) => {
       },
     );
   } catch (error) {
-    // Esse catch agora só pegará erros inesperados (ex: falha ao conectar no Supabase)
+    // 10. Tratamento de Erro Crítico (mantida)
     console.error("Critical Error in create-pix-charge:", error);
     const errorMessage = error instanceof Error ? error.message : "Erro interno no servidor";
     return new Response(JSON.stringify({ error: errorMessage }), {
