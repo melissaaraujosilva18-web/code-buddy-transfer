@@ -61,16 +61,28 @@ serve(async (req) => {
       );
     }
 
-    // >>> CORREÇÃO: FORMATAR O CPF PARA O PADRÃO XXX.XXX.XXX-XX <<<
-    // O exemplo da Oasyfy usa este formato: "document": "123.456.789-00"
-    const formattedCpf = cleanedCpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
-    // Ex: "06852767590" vira "068.527.675-90"
-
     // 6. Geração de Identificador e Webhook URL (mantida)
     const identifier = `DEP_${userId.substring(0, 8)}_${Date.now()}`;
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oasyfy-webhook`;
 
-    // 7. Payload da Oasyfy (USANDO O CPF FORMATADO)
+    // 7. Payload da Oasyfy - Tentando CPF sem formatação (apenas números)
+    const payload = {
+      identifier,
+      amount: Number(amount),
+      client: {
+        name: profile.full_name,
+        email: profile.email,
+        document: cleanedCpf, // <<< ENVIANDO CPF SEM FORMATAÇÃO (apenas números)
+      },
+      callbackUrl: webhookUrl,
+      trackProps: {
+        userId: userId,
+        depositAmount: amount,
+      },
+    };
+
+    console.log("Enviando para Oasyfy:", { ...payload, client: { ...payload.client, document: cleanedCpf.substring(0, 3) + "****" } });
+
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
       method: "POST",
       headers: {
@@ -78,20 +90,7 @@ serve(async (req) => {
         "x-public-key": Deno.env.get("OASYFY_PUBLIC_KEY") ?? "",
         "x-secret-key": Deno.env.get("OASYFY_SECRET_KEY") ?? "",
       },
-      body: JSON.stringify({
-        identifier,
-        amount: Number(amount),
-        client: {
-          name: profile.full_name,
-          email: profile.email,
-          document: formattedCpf, // <<< AQUI USAMOS O CPF FORMATADO
-        },
-        callbackUrl: webhookUrl,
-        trackProps: {
-          userId: userId,
-          depositAmount: amount,
-        },
-      }),
+      body: JSON.stringify(payload),
     });
 
     // 8. Tratamento de Erro e Log da Oasyfy (mantida)
