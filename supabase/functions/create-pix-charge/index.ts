@@ -75,14 +75,14 @@ serve(async (req) => {
       client: {
         name: profile.full_name,
         email: profile.email,
-        phone: "", // Telefone vazio conforme permitido pela API
+        phone: "(11) 99999-9999", // Telefone com formato válido
         document: formattedCpf, // CPF formatado: XXX.XXX.XXX-XX
       },
+      products: [
+        { id: identifier, name: "Depósito VortexBet", quantity: 1, price: Number(amount) }
+      ],
       callbackUrl: webhookUrl,
-      trackProps: {
-        userId: userId,
-        depositAmount: amount,
-      },
+      metadata: { userId, depositAmount: amount }, // usar 'metadata' conforme docs
     };
 
     const oasyfyResponse = await fetch("https://app.oasyfy.com/api/v1/gateway/pix/receive", {
