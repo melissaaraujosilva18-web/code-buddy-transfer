@@ -14,6 +14,8 @@ import { Mail, Lock, User, CreditCard } from "lucide-react";
 import bannerBonus from "@/assets/banner-bonus.png";
 import bannerLogin from "@/assets/banner-login.png";
 import { importUsersFromCSV } from "@/utils/importUsers";
+import { validateCPF } from "@/utils/cpfValidation";
+
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres")
@@ -21,7 +23,9 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   email: z.string().email("Email inválido"),
-  cpf: z.string().min(11, "CPF inválido"),
+  cpf: z.string().min(11, "CPF inválido").refine(validateCPF, {
+    message: "CPF inválido. Verifique os dígitos informados."
+  }),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "Você deve aceitar os termos e condições"
